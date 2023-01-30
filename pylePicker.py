@@ -68,3 +68,5 @@ def on_press(key):
 
 with Listener(on_press=on_press, suppress=True) as listener:
     listener.join()
+
+os.chdir(local_folder)
