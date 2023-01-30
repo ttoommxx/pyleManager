@@ -1,7 +1,13 @@
 # pylePicker
 
-Very simple file picker (path) written in python
+Very simple file picker (path) written in python.
 
 ## requirements
 
-pip module called "keyboard, colorama"
+First install the module 'pynput' via
+```pip install pynput```
+and then run the script through python. After selecting a file, a new file containing the path will be created, named "file_picked".
+
+## compatibility
+
+For the moment, pynput supports X11 and Windows. Linux Wayland won't work, so you can run the script through xterm (Xwayland).

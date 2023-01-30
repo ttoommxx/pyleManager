@@ -19,7 +19,7 @@ def dir_printer():
         os.system('clear')
     print('INSTRUCTIONS: (leftArrow = previous folder), (rightArrow = open folder\select file), (upArrow = up), (downArrow = down), (q = quit), (* are folders)\n')
     
-    print(os.path.abspath(os.getcwd()) + '/' + '\nBACK')
+    print(os.path.abspath(os.getcwd()) + '/\n')
     
     if len(os.listdir()) == 0:
         print('**EMPTY FOLDER**')
@@ -34,6 +34,7 @@ def dir_printer():
             print(' ', end='')
         print(x)
 
+
 def on_press(key):
     global index
     if len(os.listdir()) != 0:
@@ -47,7 +48,7 @@ def on_press(key):
                 if os.path.isdir(selection):
                     os.chdir(selection)
                 elif os.path.isfile(selection):
-                    open(local_folder + 'temp','w').write(selection)
+                    open(local_folder + 'file_picked','w').write(selection)
                     return False
                 index = 0
             case Key.left:
