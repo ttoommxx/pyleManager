@@ -1,16 +1,14 @@
 # pylePicker
 
-Very simple file picker (path) written in python.
+Very simple file picker (path) written in python. Written mainly by AI (thank you ChatGPT)
 
 ## requirements
 
-First install the module 'pynput' via
-```pip install pynput```
-and then run the script through python. After selecting a file, a new file containing the path will be created, named "file_picked".
+Run the script through python. After selecting a file, a new file containing the path will be created, named "file_picked".
 
 ## compatibility
 
-For the moment, pynput supports X11 and Windows. Linux Wayland won't work, so you can run the script through xterm (Xwayland).
+Works on Linux (Wayland and X11), should work on Windows but haven't tested (please let me know if it does).
 
 ## to do
 
