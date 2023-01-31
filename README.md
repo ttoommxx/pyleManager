@@ -1,10 +1,10 @@
 # pyleManager
 
-Very simple file picker (path) written in python. The part of the script that handles keyboard input was written by AI (thank you ChatGPT).
+Very simple file manager written in python. The part of the script that handles keyboard input was written by AI (thank you ChatGPT).
 
 ## requirements
 
-Run the script through python. After selecting a file, a new file containing the path will be created, named "file_picked".
+Run the script through python. Opening a file prints the path to it on the terminal.
 
 ## compatibility
 
