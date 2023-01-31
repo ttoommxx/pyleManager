@@ -92,12 +92,12 @@ while True:
         # quit
         case 'q':
             break
-         # toggle hidden
+        # toggle hidden
         case 'h':
-            temp = directory()[index]
+            temp_name = directory()[index]
             hidden = not hidden
-            if hidden: # update index
-                index = directory().index(temp)
+            if temp_name in directory(): # update index
+                index = directory().index(temp_name)
             else:
                 index = 0
         # instructions
