@@ -14,3 +14,4 @@ Works on Linux (Wayland and X11), should work on Windows but haven't tested (ple
 
 - add option to open files, for example via xdg-open (see windows for similar), nano etc, or save the path locally
 - add last modified and created
+- permanent settings by adding configuration file

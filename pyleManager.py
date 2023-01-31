@@ -20,7 +20,7 @@ def file_size(path):
         size = size / 1000
         i = i+1
     metric = ['b','kb','mb','gb']
-    return str(round(size,2)) + metric[i]
+    return str(round(size,2)) + ' ' + metric[i]
 
 # LIST OF FOLDERS AND FILES
 def directory():
@@ -56,7 +56,7 @@ def dir_printer():
     else:
         index_dir()
         temp_sel = directory()[index]
-        l = max([len(x) for x in directory()]) # max length file
+        l = max([len(x) for x in directory()]) + 4 # max length file
         for x in directory():
             if x == temp_sel:
                 print('->', end='')
