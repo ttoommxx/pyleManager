@@ -4,7 +4,7 @@ Very simple file manager written in python. The part of the script that handles 
 
 ## requirements
 
-Run the script through python. Opening a file prints the path to it on the terminal.
+Run the script through python, version >= 3.10. Opening a file prints the path to it on the terminal.
 
 ## compatibility
 
