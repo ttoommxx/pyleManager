@@ -1,4 +1,4 @@
-# pylePicker
+# pyleManager
 
 Very simple file picker (path) written in python. The part of the script that handles keyboard input was written by AI (thank you ChatGPT).
 
