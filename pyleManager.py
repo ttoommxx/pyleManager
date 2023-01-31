@@ -3,13 +3,24 @@ import os, sys, termios, tty
 local_folder = os.path.abspath(os.getcwd()) + '/' # save original path
 index = 0 # dummy index
 hidden = False # toggle hidden
-instructions = 'INSTRUCTIONS:\n\n  leftArrow = previous folder\n  rightArrow = open folder\select file\n  upArrow = up\n  downArrow = down\n  q = quit\n  h = toggle hidden files\n  prefix * means folder\n\npress any button to continue'
+dimension = False # toggle file_size
+instructions = 'INSTRUCTIONS:\n\n  leftArrow = previous folder\n  rightArrow = open folder\select file\n  upArrow = up\n  downArrow = down\n  q = quit\n  h = toggle hidden files\n  d = toggle file size\n  prefix ■ means folder\n\npress any button to continue'
 
 def main():
     pass
 
 if __name__ == "__main__":
     print('Press enter')
+
+# RETURN FILE SIZE AS A STRING
+def file_size(path):
+    size = os.stat(path).st_size
+    i = 0
+    while size > 999:
+        size = size / 1000
+        i = i+1
+    metric = ['b','kb','mb','gb']
+    return str(round(size,2)) + metric[i]
 
 # LIST OF FOLDERS AND FILES
 def directory():
@@ -45,16 +56,21 @@ def dir_printer():
     else:
         index_dir()
         temp_sel = directory()[index]
+        l = max([len(x) for x in directory()]) # max length file
         for x in directory():
             if x == temp_sel:
                 print('->', end='')
             else:
                 print('  ', end='')
             if os.path.isdir(os.path.abspath(os.getcwd()) + '/' + x):
-                print('*', end='')
+                print('■', end='')
             else:
                 print(' ', end='')
-            print(x)
+            print(x, end=' ')
+            if dimension and os.path.isfile(os.path.abspath(os.getcwd()) + '/' + x):
+                print(' '*(l-len(x)) + file_size(os.path.abspath(os.getcwd()) + '/' + x))
+            else:
+                print()
 
 # FETCH KEYBOARD INPUT
 def getch():
@@ -78,12 +94,19 @@ while True:
             break
          # toggle hidden
         case 'h':
+            temp = directory()[index]
             hidden = not hidden
+            if hidden: # update index
+                index = directory().index(temp)
+            else:
+                index = 0
         # instructions
         case 'i':
             clear()
             print(instructions)
             getch()
+        case 'd':
+            dimension = not dimension
         case '\x1b':
             if getch() == '[':
                 match getch():
