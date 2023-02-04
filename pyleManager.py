@@ -11,7 +11,7 @@ def instructions(mode):
         print('''file manager - INSTRUCTIONS:
 
     leftArrow = previous folder
-    rightArrow = open folder\select file
+    rightArrow = open folder
     upArrow = up
     downArrow = down
     q = quit
@@ -28,7 +28,7 @@ press any button to continue''')
         print('''file picker - INSTRUCTIONS:
 
     leftArrow = previous folder
-    rightArrow = open folder\select file
+    rightArrow = open folder
     upArrow = up
     downArrow = down
     h = toggle hidden files
@@ -123,11 +123,13 @@ def main(mode = '-manager'):
     dir_printer()
     while True:
         index_dir() # update index
+        selection = os.path.abspath(os.getcwd()) + '/' + directory()[index]
         match getch():
             # quit
             case 'q' if mode == '-manager':
                 open(local_folder + 'settings.py','w').write('hidden = ' + str(hidden) + '\ndimension = ' + str(dimension)) # save config
                 clear()
+                os.chdir(local_folder)
                 break
             # toggle hidden
             case 'h':
@@ -157,12 +159,14 @@ def main(mode = '-manager'):
             # command-line editor
             case 'e' if len(directory()) > 0 and mode == '-manager':
                 if system() == 'Linux':
-                    os.system("$EDITOR " + os.path.abspath(os.getcwd()) + '/' + directory()[index])
+                    os.system("$EDITOR " + selection)
             case '\r' if len(directory()) > 0:
-                if mode == '-picker':
-                    return os.path.abspath(os.getcwd()) + '/' + directory()[index]
-                elif system() == 'Linux':
-                    os.system("xdg-open " + os.path.abspath(os.getcwd()) + '/' + directory()[index])
+                if mode == '-picker' and os.path.isfile(selection):
+                    os.chdir(local_folder)
+                    return selection
+                elif mode == '-manager':
+                    if system() == 'Linux':
+                        os.system("xdg-open " + selection)
             case '\x1b':
                 if getch() == '[':
                     match getch():
@@ -174,7 +178,6 @@ def main(mode = '-manager'):
                             index = index + 1
                         # right
                         case 'C' if len(directory()) > 0:
-                            selection = os.path.abspath(os.getcwd()) + '/' + directory()[index]
                             if os.path.isdir(selection):
                                 os.chdir(selection)
                         # left
@@ -185,7 +188,6 @@ def main(mode = '-manager'):
             case _:
                 pass
         dir_printer()
-    os.chdir(local_folder)
 
 if __name__ == "__main__":
     try:
