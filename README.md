@@ -8,7 +8,7 @@ Run the script through python, version >= 3.10, via
 ```
 python3 pyleManager.py
 ```
-supports arguments `manager` (file manager) and `picker` (file picker, prints path)
+supports arguments `-manager` (file manager) and `-picker` (file picker, prints path)
 
 ## compatibility
 

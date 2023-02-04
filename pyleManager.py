@@ -4,38 +4,40 @@ from platform import system
 local_folder = os.path.abspath(os.getcwd()) + '/' # save original path
 from settings import *
 index = 0 # dummy index
-modalities = ['picker','manager']
+modalities = ['-picker','-manager']
 
 def instructions(mode):
-    if mode == 'manager':
+    if mode == '-manager':
         print('''file manager - INSTRUCTIONS:
 
-            leftArrow = previous folder
-            rightArrow = open folder\select file
-            upArrow = up
-            downArrow = down
-            q = quit
-            h = toggle hidden files
-            d = toggle file size
-            p = print path
-            e = edit using command-line editor
-            enter = open using the default application launcher
-            prefix ■ means folder
-    
-        press any button to continue''')
-    elif mode == 'picker':
+    leftArrow = previous folder
+    rightArrow = open folder\select file
+    upArrow = up
+    downArrow = down
+    q = quit
+    h = toggle hidden files
+    d = toggle file size
+    p = print path
+    e = edit using command-line editor
+    enter = open using the default application launcher
+
+    prefix ■ means folder
+
+press any button to continue''')
+    elif mode == '-picker':
         print('''file picker - INSTRUCTIONS:
 
-            leftArrow = previous folder
-            rightArrow = open folder\select file
-            upArrow = up
-            downArrow = down
-            h = toggle hidden files
-            d = toggle file size
-            p = print path
-            prefix ■ means folder
+    leftArrow = previous folder
+    rightArrow = open folder\select file
+    upArrow = up
+    downArrow = down
+    h = toggle hidden files
+    d = toggle file size
+    p = print path
     
-        press any button to continue''')
+    prefix ■ means folder
+
+press any button to continue''')
 
 # RETURN FILE SIZE AS A STRING
 def file_size(path):
@@ -109,7 +111,7 @@ def getch():
     return ch
 
 # file manager
-def main(mode = 'manager'):
+def main(mode = '-manager'):
     global local_folder
     global index
     global hidden
@@ -117,13 +119,13 @@ def main(mode = 'manager'):
     global modalities
     if mode not in modalities:
         input('mode not recognized, selecting manager..\npress enter to continue')
-        mode = 'manager'
+        mode = '-manager'
     dir_printer()
     while True:
         index_dir() # update index
         match getch():
             # quit
-            case 'q' if mode == 'manager':
+            case 'q' if mode == '-manager':
                 open(local_folder + 'settings.py','w').write('hidden = ' + str(hidden) + '\ndimension = ' + str(dimension)) # save config
                 clear()
                 break
@@ -153,10 +155,10 @@ def main(mode = 'manager'):
                 open(local_folder + 'settings.py','w').write('hidden = ' + str(hidden) + '\ndimension = ' + str(dimension))
                 break
             # command-line editor
-            case 'e' if len(directory()) > 0 and mode == 'manager':
+            case 'e' if len(directory()) > 0 and mode == '-manager':
                 if system() == 'Linux':
                     os.system("$EDITOR " + os.path.abspath(os.getcwd()) + '/' + directory()[index])
-            case '\r' if len(directory()) > 0 and mode == 'manager':
+            case '\r' if len(directory()) > 0 and mode == '-manager':
                 if system() == 'Linux':
                     os.system("xdg-open " + os.path.abspath(os.getcwd()) + '/' + directory()[index])
             case '\x1b':
