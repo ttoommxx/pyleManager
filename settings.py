@@ -1,2 +1,2 @@
-hidden = False
+hidden = True
 dimension = True

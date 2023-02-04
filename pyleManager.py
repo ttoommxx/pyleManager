@@ -51,7 +51,7 @@ def file_size(path):
 # LIST OF FOLDERS AND FILES
 def directory():
     global hidden
-    dirs = sorted([x for x in os.listdir() if os.path.isdir(os.path.abspath(os.getcwd()) + '/' + x) and (hidden or not x.startswith('.') )], key=lambda s: s.lower())
+    dirs = sorted([x for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith('.') )], key=lambda s: s.lower())
     files = sorted([x for x in os.listdir() if x not in dirs and (hidden or not x.startswith('.') )], key=lambda s: s.lower())
     return dirs + files
 
@@ -82,19 +82,26 @@ def dir_printer():
     else:
         index_dir()
         temp_sel = directory()[index]
-        l = max([len(x) for x in directory()]) + 4 # max length file
+        l_file = max([len(x) for x in directory()]) # max length file
+        l_size = max([len(file_size(x)) for x in directory()])
+        max_l = os.get_terminal_size().columns # length of terminal
+        print('   *DIR*', end='')   
+        if dimension and False in [os.path.isdir(x) for x in directory()]:
+            print(' '*(max_l - l_size - 9) + '*SIZE*')
+        else:
+            print()
         for x in directory():
             if x == temp_sel:
                 print('->', end='')
             else:
                 print('  ', end='')
-            if os.path.isdir(os.path.abspath(os.getcwd()) + '/' + x):
+            if os.path.isdir(x):
                 print('■', end='')
             else:
                 print(' ', end='')
             print(x, end=' ')
-            if dimension and os.path.isfile(os.path.abspath(os.getcwd()) + '/' + x):
-                print(' '*(l-len(x)) + file_size(os.path.abspath(os.getcwd()) + '/' + x))
+            if dimension and os.path.isfile(x):
+                print( ' '*(max_l - 5 - len(x) - l_size) + file_size(x))
             else:
                 print()
 
@@ -122,9 +129,8 @@ def main(mode = '-manager'):
     dir_printer()
     while True:
         index_dir() # update index
-        selection = os.path.abspath(os.getcwd()) + '/' # path folder
         if len(directory()) > 0:
-            selection = selection + directory()[index] # + file name if any
+            selection = directory()[index] # + file name if any
         match getch():
             # quit
             case 'q' if mode == '-manager':
