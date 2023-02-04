@@ -2,12 +2,13 @@
 
 Very simple file manager written in python. The part of the script that handles keyboard input was written by AI (thank you chatGPT).
 
-## requirements
+## usage
 
 Run the script through python, version >= 3.10, via
 ```
 python3 pyleManager.py
 ```
+supports arguments `manager` (file manager) and `picker` (file picker, prints path)
 
 ## compatibility
 
