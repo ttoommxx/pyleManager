@@ -33,7 +33,7 @@ press any button to continue''')
     downArrow = down
     h = toggle hidden files
     d = toggle file size
-    p = print path
+    enter = select file
     
     prefix ■ means folder
 
@@ -146,7 +146,7 @@ def main(mode = '-manager'):
             case 'd':
                 dimension = not dimension
             # print
-            case 'p':
+            case 'p' if mode == 'manager':
                 selection = os.path.abspath(os.getcwd()) + '/' 
                 if len(directory()) > 0:
                     selection = selection + directory()[index]
@@ -158,8 +158,10 @@ def main(mode = '-manager'):
             case 'e' if len(directory()) > 0 and mode == '-manager':
                 if system() == 'Linux':
                     os.system("$EDITOR " + os.path.abspath(os.getcwd()) + '/' + directory()[index])
-            case '\r' if len(directory()) > 0 and mode == '-manager':
-                if system() == 'Linux':
+            case '\r' if len(directory()) > 0:
+                if mode == '-picker':
+                    return os.path.abspath(os.getcwd()) + '/' + directory()[index]
+                elif system() == 'Linux':
                     os.system("xdg-open " + os.path.abspath(os.getcwd()) + '/' + directory()[index])
             case '\x1b':
                 if getch() == '[':
