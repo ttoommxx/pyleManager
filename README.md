@@ -16,4 +16,4 @@ Works on Linux (Wayland and X11), should work on Windows but haven't tested (ple
 
 ## to do
 
-- add last modified and created + order by modified
+- add order by file size
