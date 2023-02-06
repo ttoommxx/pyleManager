@@ -18,3 +18,4 @@ Works on Linux (Wayland and X11), should work on Windows but haven't tested (ple
 
 - suggestions?
 - add colors
+- time created
