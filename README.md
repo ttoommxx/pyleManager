@@ -1,4 +1,4 @@
-# pyleManager 0.5
+# pyleManager 0.6
 
 Very simple file manager written in python. The part of the script that handles keyboard input was written by AI (thank you chatGPT).
 
@@ -16,4 +16,4 @@ Works on Linux (Wayland and X11), should work on Windows but haven't tested (ple
 
 ## to do
 
-- add order by file size
+- suggestions?
