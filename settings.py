@@ -1,4 +1,4 @@
 hidden = True
-dimension = False
-time_modified = False
-order = 0
+dimension = True
+time_modified = True
+order = 2

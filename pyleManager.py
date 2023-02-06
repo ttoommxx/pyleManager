@@ -32,6 +32,7 @@ press any button to continue''')
     rightArrow = open folder
     upArrow = up
     downArrow = down
+    q = quit
     h = toggle hidden files
     d = toggle file size
     t = toggle time last modified
@@ -110,7 +111,7 @@ def dir_printer():
         print('**EMPTY FOLDER**')
     else:
         index_dir()
-        temp_sel = directory()[index]
+        temp = directory()[index]
         l_file = max([len(x) for x in directory()]) # max length file
         l_size = max([len(file_size(x)) for x in directory()])
         l_time = 19
@@ -122,7 +123,7 @@ def dir_printer():
             print(' '*(max(l_size - 3,3)*(dimension == True) + (max_l - 27)*(dimension == False) - 1 - (order == 2)) + '↓'*(order == 2) + '*TIME_M*', end='')
         print()
         for x in directory():
-            if x == temp_sel:
+            if x == temp:
                 print('→', end='')
             else:
                 print(' ', end='')
@@ -164,23 +165,25 @@ def main(mode = '-manager'):
             selection = directory()[index] # + file name if any
         match getch():
             # quit
-            case 'q' if mode == '-manager':
+            case 'q':
                 open(local_folder + 'settings.py','w').write('hidden = ' + str(hidden) + '\ndimension = ' + str(dimension) + '\ntime_modified = ' + str(time_modified) + '\norder = ' + str(order)) # save config
                 clear()
                 os.chdir(local_folder)
-                break
+                return
             # toggle hidden
             case 'h':
+                temp = directory()[index]
                 hidden = not hidden
                 if len(directory()) > 0:
-                    temp_name = directory()[index]
-                    if temp_name in directory(): # update index
-                        index = directory().index(temp_name)
+                    if temp in directory(): # update index
+                        index = directory().index(temp)
                     else:
                         index = 0
             # change order
             case 'm':
+                temp = directory()[index]
                 order_next()
+                index = directory().index(temp)
             # instructions
             case 'i':
                 clear()
