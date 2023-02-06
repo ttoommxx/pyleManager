@@ -1,4 +1,1 @@
-hidden = True
-dimension = True
-time_modified = True
-order = 0
+settings = {'hidden': True, 'dimension': True, 'time_modified': True, 'order': 0}

@@ -62,32 +62,32 @@ def file_size(path):
     return str(round(size,2)) + ' ' + metric[i]
 
 def order_next():
-    global order
-    vec = [1, int(dimension)*(True in [os.path.isfile(x) for x in directory()]), int(time_modified)*(True in [os.path.isfile(x) for x in directory()])]
-    order = vec.index(1,order+1) if 1 in vec[order+1:] else 0
+    global settings
+    vec = [1, int(settings['dimension'])*(True in [os.path.isfile(x) for x in directory()]), int(settings['time_modified'])*(True in [os.path.isfile(x) for x in directory()])]
+    settings['order'] = vec.index(1,settings['order']+1) if 1 in vec[settings['order']+1:] else 0
 
 # LIST OF FOLDERS AND FILES
 def directory():
     dirs = []
     files = []
     # order by
-    match order:
+    match settings['order']:
         # size
         case 1:
-            dirs = sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith('.') )}.items(), key=lambda x:x[1])
-            files = sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith('.') )}.items(), key=lambda x:x[1])
+            dirs = sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (settings['hidden'] or not x.startswith('.') )}.items(), key=lambda x:x[1])
+            files = sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isfile(x) and (settings['hidden'] or not x.startswith('.') )}.items(), key=lambda x:x[1])
             dirs = [dirs[x][0] for x in range(len(dirs))]
             files = [files[x][0] for x in range(len(files))]
         # time modified
         case 2:
-            dirs = sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith('.') )}.items(), key=lambda x:x[1])
-            files = sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith('.') )}.items(), key=lambda x:x[1])
+            dirs = sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (settings['hidden'] or not x.startswith('.') )}.items(), key=lambda x:x[1])
+            files = sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isfile(x) and (settings['hidden'] or not x.startswith('.') )}.items(), key=lambda x:x[1])
             dirs = [dirs[x][0] for x in range(len(dirs))]
             files = [files[x][0] for x in range(len(files))]
         # name
         case _: # 0 and unrecognised values
-            dirs = sorted([x for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith('.') )], key=lambda s: s.lower())
-            files = sorted([x for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith('.') )], key=lambda s: s.lower())
+            dirs = sorted([x for x in os.listdir() if os.path.isdir(x) and (settings['hidden'] or not x.startswith('.') )], key=lambda s: s.lower())
+            files = sorted([x for x in os.listdir() if os.path.isfile(x) and (settings['hidden'] or not x.startswith('.') )], key=lambda s: s.lower())
     return dirs + files
 
 # CLEAN TERMINAL
@@ -112,11 +112,11 @@ def dir_printer():
         l_size = max([len(file_size(x)) for x in directory()])
         l_time = 19
         max_l = os.get_terminal_size().columns # length of terminal
-        print(' ' + '↓'*(order == 0) + ' '*(order != 0) + '*NAME*', end='')   
-        if dimension and True in [os.path.isfile(x) for x in directory()]:
-            print(' '*(max_l - max(l_size,6) - (l_time + 2)*(time_modified == True) - 10 + (order !=1 )) + '↓'*(order == 1) + '*SIZE*', end='')
-        if time_modified and True in [os.path.isfile(x) for x in directory()]:
-            print(' '*(max(l_size - 3,3)*(dimension == True) + (max_l - 27)*(dimension == False) - 1 - (order == 2)) + '↓'*(order == 2) + '*TIME_M*', end='')
+        print(' ' + '↓'*(settings['order'] == 0) + ' '*(settings['order'] != 0) + '*NAME*', end='')   
+        if settings['dimension'] and True in [os.path.isfile(x) for x in directory()]:
+            print(' '*(max_l - max(l_size,6) - (l_time + 2)*(settings['time_modified'] == True) - 10 + (settings['order'] !=1 )) + '↓'*(settings['order'] == 1) + '*SIZE*', end='')
+        if settings['time_modified'] and True in [os.path.isfile(x) for x in directory()]:
+            print(' '*(max(l_size - 3,3)*(settings['dimension'] == True) + (max_l - 27)*(settings['dimension'] == False) - 1 - (settings['order'] == 2)) + '↓'*(settings['order'] == 2) + '*TIME_M*', end='')
         print()
         for x in directory():
             if x == temp:
@@ -128,11 +128,11 @@ def dir_printer():
             else:
                 print(' ', end='')
             print(x, end=' ')
-            if dimension and os.path.isfile(x):
-                print(' '*(max_l - 4 - len(x) - max(l_size,6) - (l_time+2)*(time_modified == True)) + file_size(x), end='')
-            if time_modified and os.path.isfile(x):
+            if settings['dimension'] and os.path.isfile(x):
+                print(' '*(max_l - 4 - len(x) - max(l_size,6) - (l_time+2)*(settings['time_modified'] == True)) + file_size(x), end='')
+            if settings['time_modified'] and os.path.isfile(x):
                 time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(time.ctime(os.lstat(x).st_mtime)))
-                print(' '*( (max(l_size,6) - len(file_size(x)) + 2 )*(dimension == True) + (max_l - 23 - len(x))*(dimension == False)) + time_stamp, end='')
+                print(' '*( (max(l_size,6) - len(file_size(x)) + 2 )*(settings['dimension'] == True) + (max_l - 23 - len(x))*(settings['dimension'] == False)) + time_stamp, end='')
             print()
 
 # FETCH KEYBOARD INPUT
@@ -149,9 +149,7 @@ def getch():
 # file manager
 def main(mode = '-manager'):
     global index
-    global hidden
-    global dimension
-    global time_modified
+    global settings
     if mode not in modalities:
         input('mode not recognized, selecting manager..\npress enter to continue')
         mode = '-manager'
@@ -162,14 +160,14 @@ def main(mode = '-manager'):
         match getch():
             # quit
             case 'q':
-                open(local_folder + 'settings.py','w').write('hidden = ' + str(hidden) + '\ndimension = ' + str(dimension) + '\ntime_modified = ' + str(time_modified) + '\norder = ' + str(order)) # save config
+                open(local_folder + 'settings.py','w').write('settings = ' + str(settings)) # save config
                 clear()
                 os.chdir(local_folder)
                 return
             # toggle hidden
             case 'h':
                 temp = directory()[index]
-                hidden = not hidden
+                settings['hidden'] = not settings['hidden']
                 if len(directory()) > 0:
                     if temp in directory(): # update index
                         index = directory().index(temp)
@@ -186,10 +184,10 @@ def main(mode = '-manager'):
                 instructions(mode)
                 getch()
             case 't':
-                time_modified = not time_modified
+                settings['time_modified'] = not settings['time_modified']
             # size
             case 'd':
-                dimension = not dimension
+                settings['dimension'] = not settings['dimension']
             # command-line editor
             case 'e' if len(directory()) > 0 and mode == '-manager':
                 if system() == 'Linux':
