@@ -1,4 +1,4 @@
-import os, sys, termios, tty
+import os, sys, termios, tty, time
 from platform import system
 
 local_folder = os.path.abspath(os.getcwd()) + '/' # save original path
@@ -17,6 +17,7 @@ def instructions(mode):
     q = quit
     h = toggle hidden files
     d = toggle file size
+    t = toggle time last modified
     e = edit using command-line editor
     enter = open using the default application launcher
 
@@ -32,6 +33,7 @@ press any button to continue''')
     downArrow = down
     h = toggle hidden files
     d = toggle file size
+    t = toggle time last modified
     enter = select file
     
     prefix ■ means folder
@@ -40,13 +42,17 @@ press any button to continue''')
 
 # RETURN FILE SIZE AS A STRING
 def file_size(path):
-    size = os.stat(path).st_size
+    size = os.lstat(path).st_size
     i = 0
     while size > 999:
         size = size / 1000
         i = i+1
     metric = ['b','kb','mb','gb']
     return str(round(size,2)) + ' ' + metric[i]
+
+# RETURN MODIFIED TIME
+def file_modified_time(path):
+    return time.ctime(os.lstat(path).st_mtime)[-13:]
 
 # LIST OF FOLDERS AND FILES
 def directory():
@@ -72,7 +78,6 @@ def index_dir():
 
 # PRINTING FUNCTION
 def dir_printer():
-    global index
     clear()
     # path directory
     print('press i for instructions\n\n' + os.path.abspath(os.getcwd()) + '/\n')
@@ -84,12 +89,14 @@ def dir_printer():
         temp_sel = directory()[index]
         l_file = max([len(x) for x in directory()]) # max length file
         l_size = max([len(file_size(x)) for x in directory()])
+        l_time = max([len(file_modified_time(x)) for x in directory()])
         max_l = os.get_terminal_size().columns # length of terminal
         print('   *DIR*', end='')   
-        if dimension and False in [os.path.isdir(x) for x in directory()]:
-            print(' '*(max_l - l_size - 9) + '*SIZE*')
-        else:
-            print()
+        if dimension and True in [os.path.isfile(x) for x in directory()]:
+            print(' '*(max_l - l_size - (l_time + 3)*(time_modified == True) - 9) + '*SIZE*', end='')
+        if time_modified and True in [os.path.isfile(x) for x in directory()]:
+            print(' '*((l_size - 3)*(dimension == True) + (max_l - 22)*(dimension == False)) + '*TIME_M*', end='')
+        print()
         for x in directory():
             if x == temp_sel:
                 print('->', end='')
@@ -101,9 +108,10 @@ def dir_printer():
                 print(' ', end='')
             print(x, end=' ')
             if dimension and os.path.isfile(x):
-                print( ' '*(max_l - 5 - len(x) - l_size) + file_size(x))
-            else:
-                print()
+                print(' '*(max_l - 5 - len(x) - l_size - (l_time+3)*(time_modified == True)) + file_size(x), end='')
+            if time_modified and os.path.isfile(x):
+                print(' '*( (l_size - len(file_size(x)) + 3)*(dimension == True) + (max_l - 18 - len(x))*(dimension == False)) + file_modified_time(x), end='')
+            print()
 
 # FETCH KEYBOARD INPUT
 def getch():
@@ -123,6 +131,7 @@ def main(mode = '-manager'):
     global hidden
     global dimension
     global modalities
+    global time_modified
     if mode not in modalities:
         input('mode not recognized, selecting manager..\npress enter to continue')
         mode = '-manager'
@@ -134,7 +143,7 @@ def main(mode = '-manager'):
         match getch():
             # quit
             case 'q' if mode == '-manager':
-                open(local_folder + 'settings.py','w').write('hidden = ' + str(hidden) + '\ndimension = ' + str(dimension)) # save config
+                open(local_folder + 'settings.py','w').write('hidden = ' + str(hidden) + '\ndimension = ' + str(dimension) + '\ntime_modified = ' + str(time_modified)) # save config
                 clear()
                 os.chdir(local_folder)
                 break
@@ -152,6 +161,8 @@ def main(mode = '-manager'):
                 clear()
                 instructions(mode)
                 getch()
+            case 't':
+                time_modified = not time_modified
             # size
             case 'd':
                 dimension = not dimension

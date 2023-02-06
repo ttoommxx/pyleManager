@@ -1,4 +1,4 @@
-# pyleManager 0.4
+# pyleManager 0.5
 
 Very simple file manager written in python. The part of the script that handles keyboard input was written by AI (thank you chatGPT).
 
