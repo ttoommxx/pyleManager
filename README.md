@@ -12,7 +12,7 @@ supports arguments `-manager` (file manager) and `-picker` (file picker, prints 
 
 ## compatibility
 
-Works on Linux (Wayland and X11), should work on Windows but haven't tested (please let me know if it does).
+Works on Linux, MacOS and Windows. It should also work on any system that supports python, with the exception of opening files and terminal file editor.
 
 ## to do
 

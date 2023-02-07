@@ -192,15 +192,35 @@ def main(mode = '-manager'):
                 settings['dimension'] = not settings['dimension']
             # command-line editor
             case 'e' if len(directory()) > 0 and mode == '-manager':
-                if system() == 'Linux':
-                    os.system("$EDITOR " + selection)
+                match system():
+                    case 'Linux':
+                        os.system('$EDITOR ' + selection)
+                    case 'Windows':
+                        clear()
+                        print('Windows does not have any built-in command line editor, press any button to continue')
+                        getch()
+                    case 'Darwin':
+                        os.system('open -e ' + selection)
+                    case _:
+                        clear()
+                        print('system not recognised, press any button to continue')
+                        getch()
             case '\r' if len(directory()) > 0:
                 if mode == '-picker' and os.path.isfile(selection):
                     os.chdir(local_folder)
                     return selection
                 elif mode == '-manager':
-                    if system() == 'Linux':
-                        os.system("xdg-open " + selection)
+                    match system():
+                        case 'Linux':
+                            os.system('xdg-open ' + selection)
+                        case 'Windows':
+                            os.system(selection)
+                        case 'Darwin':
+                            os.system('open ' + selection)
+                        case _:
+                            clear()
+                            print('system not recognised, press any button to continue')
+                            getch()
             case '\x1b':
                 if getch() == '[':
                     match getch():
