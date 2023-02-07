@@ -175,9 +175,11 @@ def main(mode = '-manager'):
                         index = 0
             # change order
             case 'm':
-                temp = directory()[index]
+                if len(directory()) > 0:
+                    temp = directory()[index]
                 order_next()
-                index = directory().index(temp)
+                if len(directory()) > 0:
+                    index = directory().index(temp)
             # instructions
             case 'i':
                 clear()
