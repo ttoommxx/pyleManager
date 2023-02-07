@@ -17,5 +17,3 @@ Works on Linux (Wayland and X11), should work on Windows but haven't tested (ple
 ## to do
 
 - suggestions?
-- add colors
-- time created
