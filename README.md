@@ -4,7 +4,7 @@ Very simple file manager written in python. The part of the script that handles 
 
 ## usage
 
-Run the script through python, version >= 3.10, via
+Run the script through python, version >= 3.10. For example, on mainstream Linux distros, run in terminal
 ```
 python3 pyleManager.py
 ```
