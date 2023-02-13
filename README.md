@@ -1,6 +1,6 @@
 # pyleManager 0.6
 
-Very simple file manager written in python. The part of the script that handles keyboard input (the function getch) was written by chatGPT.
+A very simple file manager written in python. The part of the script that handles keyboard input (the function getch) was written by chatGPT.
 
 ## usage
 
