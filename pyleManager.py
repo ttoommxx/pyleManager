@@ -207,8 +207,9 @@ def main(mode = '-manager'):
                         getch()
             case '\r' if len(directory()) > 0:
                 if mode == '-picker' and os.path.isfile(selection):
+                    path = os.getcwd() + '/' + selection 
                     os.chdir(local_folder)
-                    return selection
+                    return path
                 elif mode == '-manager':
                     match system():
                         case 'Linux':
