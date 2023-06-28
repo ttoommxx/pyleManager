@@ -154,17 +154,17 @@ if os.name == "posix":
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
 else:
+    conv_table = {
+        b"q":"q", b"h":"h", b"m":"m", b"i":"i", b"t":"t", b"d":"d", b"e":"e", b"\r":"enter",
+        b"\xe0":"arrows"
+        }
+    conv_arrows = {b"K":"left", b"M":"right", b"H":"up", b"P":"down"}
     def getch():
-        match get_key():
-            conv_table = {}
-            case b"q":
-                return "q"
-            case b"h":
-                return "h"
-            case b"m":
-                return "m"
-            case b"i":
-                return "i"
+        key_pressed = conv_table[get_key()]
+        if key_pressed != "arrows":
+            return key_pressed
+        else:
+            return conv_arrows[get_key()]
         
 
 
