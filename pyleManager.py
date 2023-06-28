@@ -92,7 +92,12 @@ def clear():
 def dir_printer():
     clear()
     # path directory
-    to_print = "pyleManager ---- press i for instructions\n\n" + os.path.abspath(os.getcwd()) + "/\n"
+    to_print = "pyleManager ---- press i for instructions\n\n"
+    max_l = os.get_terminal_size().columns # length of terminal
+    if len(os.path.abspath(os.getcwd())) > max_l:
+        to_print += "... " + os.path.abspath(os.getcwd())[-max_l+5:] + "/\n"
+    else:
+        to_print += os.path.abspath(os.getcwd()) + "/\n"
     # folders and pointer
     if len(directory()) == 0:
         to_print += "**EMPTY FOLDER**\n"
@@ -102,7 +107,6 @@ def dir_printer():
         temp = directory()[index]
         l_size = max((len(file_size(x)) for x in directory()))
         l_time = 19
-        max_l = os.get_terminal_size().columns # length of terminal
         to_print += " " + "v"*(settings["order"] == 0) + " "*(settings["order"] != 0) + "*NAME*"   
         if settings["dimension"] and True in (os.path.isfile(x) for x in directory()):
             to_print += " "*(max_l - max(l_size,6) - (l_time + 2)*(settings["time_modified"] == True) - 10 + (settings["order"] != 1 )) + "v"*(settings["order"] == 1) + "*SIZE*"
@@ -118,12 +122,17 @@ def dir_printer():
                 to_print += "<"
             else:
                 to_print += " "
-            to_print += x
+            if len(x) > max_l - 37 + l_size*(settings["dimension"] == 0) + l_time*(settings["time_modified"] == 0):
+                name_x = x[:(max_l-39)//2] + " ... " +\
+                          x[-(max_l-39)//2 - (l_size+2)*(settings["dimension"] == 0) - (l_time+2)*(settings["time_modified"] == 0):]
+            else:
+                name_x = x
+            to_print += name_x
             if settings["dimension"] and os.path.isfile(x):
-                to_print += " "*(max_l - 4 - len(x) - max(l_size,6) - (l_time+2)*(settings["time_modified"] == True)) + file_size(x)
+                to_print += " "*(max_l - 4 - len(name_x) - max(l_size,6) - (l_time+2)*(settings["time_modified"] == True)) + file_size(x)
             if settings["time_modified"] and os.path.isfile(x):
                 time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(time.ctime(os.lstat(x).st_mtime)))
-                to_print += " "*( (max(l_size,6) - len(file_size(x)) + 2 )*(settings["dimension"] == True) + (max_l - 23 - len(x))*(settings["dimension"] == False)) + time_stamp
+                to_print += " "*( (max(l_size,6) - len(file_size(x)) + 2 )*(settings["dimension"] == True) + (max_l - 23 - len(name_x))*(settings["dimension"] == False)) + time_stamp
     print(to_print)
 
 
