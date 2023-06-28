@@ -3,7 +3,7 @@ from platform import system
 import argparse
 
 if os.name == "nt":
-    from msvcrt import getch as get_key
+    from msvcrt import getch
 elif os.name == "posix":
     import termios, tty
 else:
@@ -74,17 +74,17 @@ def directory():
     match settings["order"]:
         # size
         case 1:
-            dirs = [x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ]
-            files = [x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isfile(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ]
+            dirs = [x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ] \
+                + [x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isfile(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ]
         # time modified
         case 2:
-            dirs = [x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ]
-            files = [x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isfile(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ]
+            dirs = [x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ] \
+                + [x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isfile(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ]
         # name
         case _: # 0 and unrecognised values
-            dirs = sorted([x for x in os.listdir() if os.path.isdir(x) and (settings["hidden"] or not x.startswith(".") )], key=lambda s: s.lower())
-            files = sorted([x for x in os.listdir() if os.path.isfile(x) and (settings["hidden"] or not x.startswith(".") )], key=lambda s: s.lower())
-    return dirs + files
+            dirs = sorted([x for x in os.listdir() if os.path.isdir(x) and (settings["hidden"] or not x.startswith(".") )], key=lambda s: s.lower()) \
+                + sorted([x for x in os.listdir() if os.path.isfile(x) and (settings["hidden"] or not x.startswith(".") )], key=lambda s: s.lower())
+    return dirs
 
 
 # CLEAN TERMINAL
@@ -154,18 +154,29 @@ if os.name == "posix":
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
+    conv_arrows = {"D":"left", "C":"right", "A":"up", "B":"down"}
+    def get_key():
+        key_pressed = getch()
+        match key_pressed:
+            case "\r":
+                return "enter"
+            case "\x1b":
+                if getch() == "[":
+                    return conv_arrows[getch()]
+            case _:
+                return key_pressed
 else:
     conv_table = {
         b"q":"q", b"h":"h", b"m":"m", b"i":"i", b"t":"t", b"d":"d", b"e":"e", b"\r":"enter",
         b"\xe0":"arrows"
         }
     conv_arrows = {b"K":"left", b"M":"right", b"H":"up", b"P":"down"}
-    def getch():
-        key_pressed = conv_table[get_key()]
+    def get_key():
+        key_pressed = conv_table[getch()]
         if key_pressed != "arrows":
             return key_pressed
         else:
-            return conv_arrows[get_key()]
+            return conv_arrows[getch()]
         
 
 
@@ -180,10 +191,11 @@ def main(*args):
     while True:
         if len(directory()) > 0:
             selection = directory()[index] # + file name if any
-        match getch():
+        match get_key():
             # quit
             case "q":
-                open(local_folder + "settings.py","w").write("settings = " + str(settings)) # save config
+                with open(local_folder + "settings.py","w") as settings_file: 
+                    settings_file.write("settings = " + str(settings)) # save config
                 clear()
                 os.chdir(local_folder)
                 return
@@ -228,7 +240,8 @@ def main(*args):
                         clear()
                         print("system not recognised, press any button to continue")
                         getch()
-            case "\r" if len(directory()) > 0:
+            # enter
+            case "enter" if len(directory()) > 0:
                 if picker:
                     path = os.getcwd() + "/" + selection
                     if  os.path.isdir(selection):
@@ -247,24 +260,19 @@ def main(*args):
                             clear()
                             print("system not recognised, press any button to continue")
                             getch()
-            case "\x1b":
-                if getch() == "[":
-                    match getch():
-                        # up
-                        case "A" if len(directory()) > 0:
-                            index = index - 1
-                        # down
-                        case "B" if len(directory()) > 0:
-                            index = index + 1
-                        # right
-                        case "C" if len(directory()) > 0:
-                            if os.path.isdir(selection):
-                                os.chdir(selection)
-                        # left
-                        case "D":
-                            os.chdir("..")
-                        case _:
-                            pass
+            # up
+            case "up" if len(directory()) > 0:
+                index = index - 1
+            # down
+            case "down" if len(directory()) > 0:
+                index = index + 1
+            # right
+            case "right" if len(directory()) > 0:
+                if os.path.isdir(selection):
+                    os.chdir(selection)
+            # left
+            case "left":
+                os.chdir("..")
             case _:
                 pass
         dir_printer()
