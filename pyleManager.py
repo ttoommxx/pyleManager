@@ -142,8 +142,9 @@ def dir_printer():
                 to_print += " "*( (max(l_size,6) - len(file_size(x)) + 2 )*(settings["dimension"] == True) + (max_l - 23 - len(name_x))*(settings["dimension"] == False)) + time_stamp
     print(to_print)
 
+
+# FETCH KEYBOARD INPUT
 if os.name == "posix":
-    # FETCH KEYBOARD INPUT
     def getch():
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
