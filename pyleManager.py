@@ -3,7 +3,7 @@ from platform import system
 import argparse
 
 if os.name == "nt":
-    from msvcrt import getch
+    from msvcrt import getch as get_key
 elif os.name == "posix":
     import termios, tty
 else:
@@ -153,6 +153,19 @@ if os.name == "posix":
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
+else:
+    def getch():
+        match get_key():
+            conv_table = {}
+            case b"q":
+                return "q"
+            case b"h":
+                return "h"
+            case b"m":
+                return "m"
+            case b"i":
+                return "i"
+        
 
 
 # FILE MANAGER
