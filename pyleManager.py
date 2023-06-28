@@ -108,10 +108,10 @@ def dir_printer():
             to_print += " "*(max_l - max(l_size,6) - (l_time + 2)*(settings["time_modified"] == True) - 10 + (settings["order"] != 1 )) + "v"*(settings["order"] == 1) + "*SIZE*"
         if settings["time_modified"] and True in (os.path.isfile(x) for x in directory()):
             to_print += " "*(max(l_size - 3,3)*(settings["dimension"] == True) + (max_l - 27)*(settings["dimension"] == False) - 1 - (settings["order"] == 2)) + "v"*(settings["order"] == 2) + "*TIME_M*"
-        to_print += "\n"
         for x in directory():
+            to_print += "\n"
             if x == temp:
-                to_print += "-"
+                to_print += "+"
             else:
                 to_print += " "
             if os.path.isdir(x):
@@ -124,7 +124,6 @@ def dir_printer():
             if settings["time_modified"] and os.path.isfile(x):
                 time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(time.ctime(os.lstat(x).st_mtime)))
                 to_print += " "*( (max(l_size,6) - len(file_size(x)) + 2 )*(settings["dimension"] == True) + (max_l - 23 - len(x))*(settings["dimension"] == False)) + time_stamp
-            to_print += "\n"
     print(to_print)
 
 
