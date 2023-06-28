@@ -1,6 +1,13 @@
-import os, sys, termios, tty, time
+import os, sys, tty, time
 from platform import system
 import argparse
+
+if os.name == "nt":
+    from msvcrt import getch
+elif os.name == "posix":
+    import termios
+else:
+    sys.exit("Operating system not recognised")
 
 parser = argparse.ArgumentParser(prog="pyleManager", description="file manager written in Python")
 parser.add_argument("-p", "--picker", action="store_true", help="use pyleManager as a file selector")
@@ -135,17 +142,17 @@ def dir_printer():
                 to_print += " "*( (max(l_size,6) - len(file_size(x)) + 2 )*(settings["dimension"] == True) + (max_l - 23 - len(name_x))*(settings["dimension"] == False)) + time_stamp
     print(to_print)
 
-
-# FETCH KEYBOARD INPUT
-def getch():
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-    try:
-        tty.setraw(sys.stdin.fileno())
-        ch = sys.stdin.read(1)
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    return ch
+if os.name == "posix":
+    # FETCH KEYBOARD INPUT
+    def getch():
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
 
 
 # FILE MANAGER
