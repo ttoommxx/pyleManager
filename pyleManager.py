@@ -1,11 +1,11 @@
-import os, sys, tty, time
+import os, sys, time
 from platform import system
 import argparse
 
 if os.name == "nt":
     from msvcrt import getch
 elif os.name == "posix":
-    import termios
+    import termios, tty
 else:
     sys.exit("Operating system not recognised")
 
