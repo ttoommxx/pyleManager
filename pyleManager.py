@@ -17,9 +17,9 @@ picker = args.picker
 
 local_folder = os.path.abspath(os.getcwd()) + "/" # save original path
 index = 0 # dummy index
-dimension = True 
-time_modified = True
-hidden = True
+dimension = False 
+time_modified = False
+hidden = False
 order = 0
 
 
@@ -104,45 +104,40 @@ def dir_printer():
     # path directory
     to_print = "pyleManager --- press i for instructions\n\n"
     max_l = os.get_terminal_size().columns # length of terminal
-    if len(os.path.abspath(os.getcwd())) > max_l:
-        to_print += "... " + os.path.abspath(os.getcwd())[-max_l+5:] + "/\n"
-    else:
-        to_print += os.path.abspath(os.getcwd()) + "/\n"
+    # name folder
+    to_print += f"{'... ' if  len(os.path.abspath(os.getcwd())) > max_l else ''}{os.path.abspath(os.getcwd())[-max_l+5:]}/\n"
     # folders and pointer
     if len(directory()) == 0:
-        to_print += "**EMPTY FOLDER**\n"
+        to_print += "**EMPTY FOLDER**"
     else:
         order_update(0)
         index_dir()
-        temp = directory()[index]
+        current_selection = directory()[index]
         l_size = max((len(file_size(x)) for x in directory()))
         l_time = 19
-        to_print += " " + "v"*(order == 0) + " "*(order != 0) + "*NAME*"   
+    
+        to_print += " " + f"{'v' if order == 0 else ' '}*NAME*"
+        temp = ""
         if dimension and True in (os.path.isfile(x) for x in directory()):
-            to_print += " "*(max_l - max(l_size,6) - (l_time + 2)*(time_modified == True) - 10 + (order != 1 )) + "v"*(order == 1) + "*SIZE*"
+            temp += f" |{'v' if order == 1 else ' '}*SIZE*" + " "*(l_size-6)
         if time_modified and True in (os.path.isfile(x) for x in directory()):
-            to_print += " "*(max(l_size - 3,3)*(dimension == True) + (max_l - 27)*(dimension == False) - 1 - (order == 2)) + "v"*(order == 2) + "*TIME_M*"
+            temp += f" |{'v' if order == 2 else ' '}*TIME_M*" + " "*11
+
+        to_print += " "*(max_l - len(temp)-8) + temp
+
         for x in directory():
-            to_print += "\n"
-            if x == temp:
-                to_print += "+"
-            else:
-                to_print += " "
-            if os.path.isdir(x):
-                to_print += "<"
-            else:
-                to_print += " "
-            if len(x) > max_l - 37 + l_size*(dimension == 0) + l_time*(time_modified == 0):
-                name_x = x[:(max_l-39)//2] + " ... " +\
-                          x[-(max_l-39)//2 - (l_size+2)*(dimension == 0) - (l_time+2)*(time_modified == 0):]
+            to_print += "\n" + f"{'+' if x == current_selection else ' '}" + f"{'<' if os.path.isdir(x) else ' '}"
+            temp = ""
+            if dimension and os.path.isfile(x):
+                temp += " | " + file_size(x) + " "*(l_size - len(file_size(x)))
+            if time_modified and os.path.isfile(x):
+                temp += " | " + time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(time.ctime(os.lstat(x).st_mtime)))
+            
+            if len(x) > max_l - 6 - (l_size+3)*(dimension == True) - (l_time+3)*(time_modified == True):
+                name_x = f"... {x[-(max_l - 6 - (l_size+3)*(dimension == True) - (l_time+3)*(time_modified == True)):]}"
             else:
                 name_x = x
-            to_print += name_x
-            if dimension and os.path.isfile(x):
-                to_print += " "*(max_l - 4 - len(name_x) - max(l_size,6) - (l_time+2)*(time_modified == True)) + file_size(x)
-            if time_modified and os.path.isfile(x):
-                time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(time.ctime(os.lstat(x).st_mtime)))
-                to_print += " "*( (max(l_size,6) - len(file_size(x)) + 2 )*(dimension == True) + (max_l - 23 - len(name_x))*(dimension == False)) + time_stamp
+            to_print += name_x + " "*(max_l-len(name_x)-len(temp) - 2) + temp
     print(to_print)
 
 
