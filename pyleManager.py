@@ -16,8 +16,11 @@ picker = args.picker
 
 
 local_folder = os.path.abspath(os.getcwd()) + "/" # save original path
-from settings import * # just import local settings
 index = 0 # dummy index
+dimension = True 
+time_modified = True
+hidden = True
+order = 0
 
 
 # INSTRUCTION PRINTER
@@ -62,28 +65,28 @@ def file_size(path):
 
 # UPDATE ORDER, 0 stay 1 next
 def order_update(j):
-    global settings
-    vec = (1, int(settings["dimension"])*(True in (os.path.isfile(x) for x in directory())),
-           int(settings["time_modified"])*(True in (os.path.isfile(x) for x in directory())))
-    settings["order"] = vec.index(1,settings["order"]+j) if 1 in vec[settings["order"]+j:] else 0
+    global order
+    vec = (1, int(dimension)*(True in (os.path.isfile(x) for x in directory())),
+           int(time_modified)*(True in (os.path.isfile(x) for x in directory())))
+    order = vec.index(1,order+j) if 1 in vec[order+j:] else 0
 
 
 # LIST OF FOLDERS AND FILES
 def directory():
     # order by
-    match settings["order"]:
+    match order:
         # size
         case 1:
-            dirs = [x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ] \
-                + [x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isfile(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ]
+            dirs = [x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1]) ] \
+                + [x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1]) ]
         # time modified
         case 2:
-            dirs = [x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ] \
-                + [x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isfile(x) and (settings["hidden"] or not x.startswith(".") )}.items(), key=lambda x:x[1]) ]
+            dirs = [x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1]) ] \
+                + [x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1]) ]
         # name
         case _: # 0 and unrecognised values
-            dirs = sorted([x for x in os.listdir() if os.path.isdir(x) and (settings["hidden"] or not x.startswith(".") )], key=lambda s: s.lower()) \
-                + sorted([x for x in os.listdir() if os.path.isfile(x) and (settings["hidden"] or not x.startswith(".") )], key=lambda s: s.lower())
+            dirs = sorted([x for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )], key=lambda s: s.lower()) \
+                + sorted([x for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )], key=lambda s: s.lower())
     return dirs
 
 
@@ -99,7 +102,7 @@ def clear():
 def dir_printer():
     clear()
     # path directory
-    to_print = "pyleManager ---- press i for instructions\n\n"
+    to_print = "pyleManager --- press i for instructions\n\n"
     max_l = os.get_terminal_size().columns # length of terminal
     if len(os.path.abspath(os.getcwd())) > max_l:
         to_print += "... " + os.path.abspath(os.getcwd())[-max_l+5:] + "/\n"
@@ -114,11 +117,11 @@ def dir_printer():
         temp = directory()[index]
         l_size = max((len(file_size(x)) for x in directory()))
         l_time = 19
-        to_print += " " + "v"*(settings["order"] == 0) + " "*(settings["order"] != 0) + "*NAME*"   
-        if settings["dimension"] and True in (os.path.isfile(x) for x in directory()):
-            to_print += " "*(max_l - max(l_size,6) - (l_time + 2)*(settings["time_modified"] == True) - 10 + (settings["order"] != 1 )) + "v"*(settings["order"] == 1) + "*SIZE*"
-        if settings["time_modified"] and True in (os.path.isfile(x) for x in directory()):
-            to_print += " "*(max(l_size - 3,3)*(settings["dimension"] == True) + (max_l - 27)*(settings["dimension"] == False) - 1 - (settings["order"] == 2)) + "v"*(settings["order"] == 2) + "*TIME_M*"
+        to_print += " " + "v"*(order == 0) + " "*(order != 0) + "*NAME*"   
+        if dimension and True in (os.path.isfile(x) for x in directory()):
+            to_print += " "*(max_l - max(l_size,6) - (l_time + 2)*(time_modified == True) - 10 + (order != 1 )) + "v"*(order == 1) + "*SIZE*"
+        if time_modified and True in (os.path.isfile(x) for x in directory()):
+            to_print += " "*(max(l_size - 3,3)*(dimension == True) + (max_l - 27)*(dimension == False) - 1 - (order == 2)) + "v"*(order == 2) + "*TIME_M*"
         for x in directory():
             to_print += "\n"
             if x == temp:
@@ -129,17 +132,17 @@ def dir_printer():
                 to_print += "<"
             else:
                 to_print += " "
-            if len(x) > max_l - 37 + l_size*(settings["dimension"] == 0) + l_time*(settings["time_modified"] == 0):
+            if len(x) > max_l - 37 + l_size*(dimension == 0) + l_time*(time_modified == 0):
                 name_x = x[:(max_l-39)//2] + " ... " +\
-                          x[-(max_l-39)//2 - (l_size+2)*(settings["dimension"] == 0) - (l_time+2)*(settings["time_modified"] == 0):]
+                          x[-(max_l-39)//2 - (l_size+2)*(dimension == 0) - (l_time+2)*(time_modified == 0):]
             else:
                 name_x = x
             to_print += name_x
-            if settings["dimension"] and os.path.isfile(x):
-                to_print += " "*(max_l - 4 - len(name_x) - max(l_size,6) - (l_time+2)*(settings["time_modified"] == True)) + file_size(x)
-            if settings["time_modified"] and os.path.isfile(x):
+            if dimension and os.path.isfile(x):
+                to_print += " "*(max_l - 4 - len(name_x) - max(l_size,6) - (l_time+2)*(time_modified == True)) + file_size(x)
+            if time_modified and os.path.isfile(x):
                 time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(time.ctime(os.lstat(x).st_mtime)))
-                to_print += " "*( (max(l_size,6) - len(file_size(x)) + 2 )*(settings["dimension"] == True) + (max_l - 23 - len(name_x))*(settings["dimension"] == False)) + time_stamp
+                to_print += " "*( (max(l_size,6) - len(file_size(x)) + 2 )*(dimension == True) + (max_l - 23 - len(name_x))*(dimension == False)) + time_stamp
     print(to_print)
 
 
@@ -185,8 +188,7 @@ def main(*args):
     if args and args[0] in ["-p", "--picker"]:
         global picker
         picker = True
-    global index
-    global settings
+    global index, dimension, time_modified, hidden
     dir_printer()
     while True:
         if len(directory()) > 0:
@@ -194,15 +196,13 @@ def main(*args):
         match get_key():
             # quit
             case "q":
-                with open(local_folder + "settings.py","w") as settings_file: 
-                    settings_file.write("settings = " + str(settings)) # save config
                 clear()
                 os.chdir(local_folder)
                 return
             # toggle hidden
             case "h":
                 temp = directory()[index]
-                settings["hidden"] = not settings["hidden"]
+                hidden = not hidden
                 if len(directory()) > 0:
                     if temp in directory(): # update index
                         index = directory().index(temp)
@@ -221,10 +221,10 @@ def main(*args):
                 instructions()
                 getch()
             case "t":
-                settings["time_modified"] = not settings["time_modified"]
+                time_modified = not time_modified
             # size
             case "d":
-                settings["dimension"] = not settings["dimension"]
+                dimension = not dimension
             # command-line editor
             case "e" if len(directory()) > 0 and not picker:
                 match system():
