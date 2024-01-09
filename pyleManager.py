@@ -57,8 +57,10 @@ def index_dir():
 def file_size(path):
     size = os.lstat(path).st_size
     i = len(str(size)) // 3
-    if len(str(size)) % 3 == 0: i-=1
-    if i > 3: i = 3
+    if len(str(size)) % 3 == 0:
+        i -= 1
+    if i > 3:
+        i = 3
     size /= 1000**i
     return f'{size:.2f}{("b","kb","mb","gb")[i]}'
 
@@ -77,15 +79,15 @@ def directory():
     match order:
         # size
         case 1:
-            dirs = tuple( chain( (x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])), \
+            dirs = list( chain( (x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])), \
                                 ( x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
         # time modified
         case 2:
-            dirs = tuple(chain( (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])), \
+            dirs = list(chain( (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])), \
                                 (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
         # name
         case _: # 0 and unrecognised values
-            dirs = tuple( chain( sorted( (x for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") ) ), key=lambda s: s.lower()),\
+            dirs = list( chain( sorted( (x for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") ) ), key=lambda s: s.lower()),\
                                 sorted((x for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )), key=lambda s: s.lower()) ) )
     return dirs
 
@@ -188,7 +190,7 @@ def main(*args):
             case "q":
                 clear()
                 os.chdir(local_folder)
-                return
+                sys.exit(0)
             # toggle hidden
             case "h":
                 temp = directory()[index]
