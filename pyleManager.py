@@ -190,7 +190,7 @@ def main(*args):
             case "q":
                 clear()
                 os.chdir(local_folder)
-                sys.exit(0)
+                return
             # toggle hidden
             case "h":
                 temp = directory()[index]
