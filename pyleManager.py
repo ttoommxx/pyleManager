@@ -15,6 +15,7 @@ args = parser.parse_args() # args.picker contains the modality
 picker = args.picker
 
 
+# GLOBAL VARIABLES
 local_folder = f"{os.path.abspath(os.getcwd())}/" # save original path
 index = 0 # dummy index
 dimension = False 
@@ -26,6 +27,8 @@ from_file = 0
 rows_len = os.get_terminal_size().lines
 columns_len = os.get_terminal_size().columns
 beep = False
+instruction_string = None
+
 
 # RETURN FILE SIZE AS A STRING
 def file_size(path):
@@ -82,6 +85,7 @@ def clear():
 # PRINTING FUNCTION
 def dir_printer(position = True):
     clear()
+
     # path directory
     to_print = ["### pyleManager --- press i for instructions ###"[:columns_len], "\n"]
     # name folder
@@ -112,6 +116,7 @@ def dir_printer(position = True):
             name_x = f"{f'... {x[-(columns_len - 6 - len(columns)):]}' if len(x) > columns_len - 2 - len(columns) else x}"
             to_print.append( f"{name_x}{' '*(columns_len-len(name_x)-len(columns) - 2)}{columns}" )
     print("".join(to_print), end = "\r")
+
     if position:
         sys.stdout.write(f'\033[{ min(len(directory()), rows_len-3)  }A')
         print()
@@ -153,6 +158,13 @@ else:
             return conv_arrows[getch()]
         
 
+# INSTRUCTIONS
+def instructions():
+    clear()
+    print(instruction_string, end = "")
+    getch()
+        
+
 # BEEP
 def beeper():
     if beep:
@@ -173,16 +185,16 @@ def print_folder(refresh = False):
 
 # FILE MANAGER
 def main(*args):
-    global index, dimension, time_modified, from_file, hidden, rows_len, columns_len, beep
+    global index, dimension, time_modified, from_file, hidden, rows_len, columns_len, beep, instruction_string
     
     if args and args[0] in ["-p", "--picker"]:
         global picker
         picker = True
     
-    instructions = f"""INSTRUCTIONS:
+    instruction_string = f"""INSTRUCTIONS:
 
     the prefix \"<\" means folder
-    
+
     leftArrow = previous folder
     rightArrow = open folder
     upArrow = up
@@ -198,7 +210,7 @@ def main(*args):
     e = {'--disabled--' if picker else 'edit using command-line editor'}
 
 press any button to continue"""
-    
+
     dir_printer()
 
     while True:
@@ -233,9 +245,7 @@ press any button to continue"""
 
             # instructions
             case "i":
-                clear()
-                print(instructions, end = "")
-                getch()
+                instructions()
                 print_folder()
 
             # time
