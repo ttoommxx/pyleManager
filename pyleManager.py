@@ -51,8 +51,9 @@ def order_update(j):
     old_order = order
     # create a vector with (1,a,b) where a,b are one if dimension and time_modified are enabled
     vec = (1,
-           dimension * (True in (os.path.isfile(x) for x in directory())),
-           time_modified * (True in (os.path.isfile(x) for x in directory())))
+           dimension * any(os.path.isfile(x) for x in directory()),
+           time_modified * any(os.path.isfile(x) for x in directory())
+           )
     # search the next 1 and if not found return 0
     order = vec.index(1,order+j) if 1 in vec[order+j:] else 0
     if order != old_order:
@@ -107,7 +108,10 @@ def dir_printer(position = True):
     # path directory
     to_print = ["### pyleManager --- press i for instructions ###"[:columns_len], "\n"]
     # name folder
-    to_print.append( f"{'... ' if  len(os.path.abspath(os.getcwd())) > columns_len else ''}{os.path.abspath(os.getcwd())[-columns_len+5:]}{os.sep}\n" )
+    to_print.append( f"{'... ' if  len(os.path.abspath(os.getcwd())) > columns_len else ''}{os.path.abspath(os.getcwd())[-columns_len+5:]}" )
+    if not to_print[-1].endswith(os.sep):
+        to_print.append(os.sep)
+    to_print.append("\n")
     # folders and pointer
     if len(directory()) == 0:
         to_print.append( " **EMPTY FOLDER**" )
@@ -117,9 +121,9 @@ def dir_printer(position = True):
     
         to_print.append( f" {'v' if order == 0 else ' '}*NAME*" )
         columns = ""
-        if dimension and True in (os.path.isfile(x) for x in directory()):
+        if dimension and any(os.path.isfile(x) for x in directory()):
             columns += f" |{'v' if order == 1 else ' '}*SIZE*{' '*(l_size-6)}"
-        if time_modified and True in (os.path.isfile(x) for x in directory()):
+        if time_modified:
             columns += f" |{'v' if order == 2 else ' '}*TIME MODIFIED*{' '*4}"
         if permission: 
             columns += f" | *PERM*"
@@ -132,7 +136,7 @@ def dir_printer(position = True):
             columns = ""
             if dimension and os.path.isfile(x):
                 columns += f" | {file_size(x)}{' '*(l_size - len(file_size(x)))}"
-            if time_modified and os.path.isfile(x):
+            if time_modified:
                 columns += f" | {time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(time.ctime(os.lstat(x).st_mtime)))}"
             if permission:
                 permissions = os.stat(x).st_mode
@@ -173,7 +177,11 @@ if os.name == "posix":
                 return key_pressed
 elif os.name == "nt":
     def getch():
-        return getch_encoded().decode('UTF-8')
+        letter = getch_encoded()
+        try:
+            return letter.decode('ascii')
+        except:
+            return letter
     
     conv_arrows = {"K":"left", "M":"right", "H":"up", "P":"down"}
     def get_key():
@@ -181,7 +189,7 @@ elif os.name == "nt":
         match key_pressed:
             case "\r":
                 return "enter"
-            case "\xe0":
+            case b"\xe0":
                 return conv_arrows.get(getch(), None)
             case _:
                 return key_pressed
