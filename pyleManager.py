@@ -17,16 +17,16 @@ picker = args.picker
 
 # GLOBAL VARIABLES
 local_folder = f"{os.path.abspath(os.getcwd())}/" # save original path
-index = 0 # dummy index
 dimension = False 
 time_modified = False
 hidden = False
+beep = False
+index = 0  # dummy index
 order = 0
 current_directory = None
 from_file = 0
 rows_len = os.get_terminal_size().lines
 columns_len = os.get_terminal_size().columns
-beep = False
 instruction_string = None
 
 
@@ -75,10 +75,12 @@ def directory():
 
 
 # CLEAN TERMINAL
-def clear():
-    if os.name == "nt":
+
+if os.name == "nt":
+    def clear():
         os.system("cls")
-    else:
+elif os.name == "posix":
+    def clear():
         os.system("clear")
 
 
