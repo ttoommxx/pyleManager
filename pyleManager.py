@@ -211,7 +211,8 @@ def beeper():
 
 # RESET FOLDER SETTINGS
 def print_folder(refresh = False):
-    global from_file, index
+    global from_file, index, rows_len
+    rows_len = os.get_terminal_size().lines
     from_file = 0
     index = 0
     if refresh:
@@ -255,8 +256,6 @@ press any button to continue"""
     dir_printer()
 
     while True:
-
-        rows_len = os.get_terminal_size().lines
         
         if len(directory()) > 0:
             selection = directory()[index] # + file name if any
