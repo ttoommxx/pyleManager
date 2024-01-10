@@ -193,21 +193,22 @@ def main(*args):
     
     instruction_string = f"""INSTRUCTIONS:
 
-    the prefix \"<\" means folder
+the prefix \"<\" means folder
 
-    leftArrow = previous folder
-    rightArrow = open folder
-    upArrow = up
-    downArrow = down
-    q = quit
-    h = toggle hidden files
-    d = toggle file size
-    t = toggle time last modified
-    b = toggle beep
-    m = change ordering
-    enter = {
+upArrow = up
+downArrow = down
+rightArrow = open folder
+leftArrow = previous folder
+q = quit
+r = refresh
+h = toggle hidden files
+d = toggle file size
+t = toggle time last modified
+b = toggle beep
+m = change ordering
+enter = {
         'select file' if picker else 'open using the default application launcher'}
-    e = {'--disabled--' if picker else 'edit using command-line editor'}
+e = {'--disabled--' if picker else 'edit using command-line editor'}
 
 press any button to continue"""
 
@@ -227,25 +228,65 @@ press any button to continue"""
             selection = directory()[index] # + file name if any
 
         match button:
+            # up
+            case "up":
+                if len(directory()) > 0 and index > 0:
+                    index -= 1
+                    if index >= from_file:
+                        sys.stdout.write('\033[2A')
+                        print()
+                    else:
+                        from_file -= 1
+                        dir_printer()
+                else:
+                    beeper()
+
+            # down
+            case "down":
+                if len(directory()) > 0 and index < len(directory())-1:
+                    index += 1
+                    if index < rows_len - 3:
+                        print()
+                    else:
+                        from_file += 1
+                        dir_printer(position=False)
+                else:
+                    beeper()
+
+            # right
+            case "right":
+                if len(directory()) > 0 and os.path.isdir(selection):
+                    os.chdir(selection)
+                    print_folder(refresh=True)
+                else:
+                    beeper()
+
+            # left
+            case "left":
+                if os.path.dirname(os.getcwd()) != os.getcwd():
+                    os.chdir("..")
+                    print_folder(refresh=True)
+                else:
+                    beeper()
+
             # quit
             case "q":
                 clear()
                 os.chdir(local_folder)
                 return
             
+            # refresh
+            case "r":
+                print_folder(refresh = True)
+            
             # toggle hidden
             case "h":
                 hidden = not hidden
                 print_folder(refresh = True)
-
-            # change order
-            case "m":
-                order_update(1)
-                print_folder()
-
-            # instructions
-            case "i":
-                instructions()
+            
+            # size
+            case "d":
+                dimension = not dimension
                 print_folder()
 
             # time
@@ -253,33 +294,14 @@ press any button to continue"""
                 time_modified = not time_modified
                 print_folder()
 
-            # size
-            case "d":
-                dimension = not dimension
-                print_folder()
-
+            # beep
             case "b":
                 beep = not beep
 
-            # command-line editor
-            case "e":
-                if len(directory()) > 0 and not picker:
-                    selection = selection.replace("\"", "\\\"")
-                    match system():
-                        case "Linux":
-                            os.system(f"$EDITOR \"{selection}\"")
-                        case "Windows":
-                            clear()
-                            print("Windows does not have any built-in command line editor, press any button to continue")
-                            getch()
-                        case "Darwin":
-                            os.system(f"open -e \"{selection}\"")
-                        case _:
-                            clear()
-                            print("system not recognised, press any button to continue")
-                            getch()
-                else:
-                    beeper()
+            # change order
+            case "m":
+                order_update(1)
+                print_folder()
                 
             # enter
             case "enter":
@@ -304,47 +326,33 @@ press any button to continue"""
                                 getch()
                 else:
                     beeper()
-                
-            # up
-            case "up":
-                if len(directory()) > 0 and index > 0:
-                    index -= 1
-                    if index >= from_file:
-                        sys.stdout.write('\033[2A')
-                        print()
-                    else:
-                        from_file -= 1
-                        dir_printer()
+            
+            # command-line editor
+            case "e":
+                if len(directory()) > 0 and not picker:
+                    selection = selection.replace("\"", "\\\"")
+                    match system():
+                        case "Linux":
+                            os.system(f"$EDITOR \"{selection}\"")
+                        case "Windows":
+                            clear()
+                            print(
+                                "Windows does not have any built-in command line editor, press any button to continue")
+                            getch()
+                        case "Darwin":
+                            os.system(f"open -e \"{selection}\"")
+                        case _:
+                            clear()
+                            print(
+                                "system not recognised, press any button to continue")
+                            getch()
                 else:
                     beeper()
-
-            # down
-            case "down":
-                if len(directory()) > 0 and index < len(directory())-1:
-                    index += 1
-                    if index < rows_len - 3:
-                        print()
-                    else:
-                        from_file += 1
-                        dir_printer(position = False)
-                else:
-                    beeper()
-                    
-            # right
-            case "right":
-                if len(directory()) > 0 and os.path.isdir(selection):
-                    os.chdir(selection)
-                    print_folder(refresh = True)
-                else:
-                    beeper()
-                
-            # left
-            case "left":
-                if os.path.dirname(os.getcwd()) != os.getcwd():
-                    os.chdir("..")
-                    print_folder(refresh = True)
-                else:
-                    beeper()
+            
+            # instructions
+            case "i":
+                instructions()
+                print_folder()
 
             case _:
                 pass
