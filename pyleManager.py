@@ -1,3 +1,4 @@
+# REQUIRED MODULES
 import os, sys, time, argparse
 from platform import system
 from itertools import chain
@@ -9,6 +10,8 @@ elif os.name == "posix":
 else:
     sys.exit("Operating system not recognised")
 
+
+# ARGUMENT PARTSER
 parser = argparse.ArgumentParser(prog="pyleManager", description="file manager written in Python")
 parser.add_argument("-p", "--picker", action="store_true", help="use pyleManager as a file selector")
 args = parser.parse_args() # args.picker contains the modality
@@ -45,8 +48,11 @@ def file_size(path):
 # UPDATE ORDER, 0 stay 1 next
 def order_update(j):
     global order, current_directory
-    vec = (1, int(dimension)*(True in (os.path.isfile(x) for x in directory())),
-            int(time_modified)*(True in (os.path.isfile(x) for x in directory())))
+    # create a vector with (1,a,b) where a,b are one if dimension and time_modified are enabled
+    vec = (1,
+           dimension * (True in (os.path.isfile(x) for x in directory())),
+           time_modified * (True in (os.path.isfile(x) for x in directory())))
+    # search the next 1 and if not found return 0
     order = vec.index(1,order+j) if 1 in vec[order+j:] else 0
     current_directory = None
     
@@ -60,22 +66,27 @@ def directory():
         match order:
             # size
             case 1:
-                dirs = list( chain( (x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])), \
-                                    ( x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
+                dirs = list( chain( (x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir()
+                                                           if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])),
+                                    ( x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir()
+                                                            if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
             # time modified
             case 2:
-                dirs = list(chain( (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])), \
-                                    (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
+                dirs = list( chain( (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir()
+                                                          if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])),
+                                    (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir()
+                                                           if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
             # name
             case _: # 0 and unrecognised values
-                dirs = list( chain( sorted( (x for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") ) ), key=lambda s: s.lower()),\
-                                    sorted((x for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )), key=lambda s: s.lower()) ) )
+                dirs = list( chain( sorted( (x for x in os.listdir()
+                                             if os.path.isdir(x) and (hidden or not x.startswith(".") ) ), key=lambda s: s.lower()),
+                                    sorted((x for x in os.listdir()
+                                            if os.path.isfile(x) and (hidden or not x.startswith(".") )), key=lambda s: s.lower()) ) )
         current_directory = dirs
     return current_directory
 
 
 # CLEAN TERMINAL
-
 if os.name == "nt":
     def clear():
         os.system("cls")
@@ -105,9 +116,9 @@ def dir_printer(position = True):
         if dimension and True in (os.path.isfile(x) for x in directory()):
             columns += f" |{'v' if order == 1 else ' '}*SIZE*{' '*(l_size-6)}"
         if time_modified and True in (os.path.isfile(x) for x in directory()):
-            columns += f" |{'v' if order == 2 else ' '}*TIME_M*{' '*11}"
+            columns += f" |{'v' if order == 2 else ' '}*TIME MODIFIED*{' '*4}"
         if permission: 
-            columns += f" |{'v' if order == 2 else ' '}*PERM*"
+            columns += f" | *PERM*"
 
         to_print.append( f"{' '*(columns_len - len(columns)-8)}{columns}" )
 
@@ -121,7 +132,7 @@ def dir_printer(position = True):
                 columns += f" | {time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(time.ctime(os.lstat(x).st_mtime)))}"
             if permission:
                 permissions = os.stat(x).st_mode
-                columns += f" | {'r' if permissions & 0o400 else '_'} {'w' if permissions & 0o200 else '_'} {'e' if permissions & 0o100 else '_'} "
+                columns += f" | {'r' if permissions & 0o400 else '-'} {'w' if permissions & 0o200 else '-'} {'e' if permissions & 0o100 else '-'} "
                 
             name_x = f"{f'... {x[-(columns_len - 6 - len(columns)):]}' if len(x) > columns_len - 2 - len(columns) else x}"
             to_print.append( f"{name_x}{' '*(columns_len-len(name_x)-len(columns) - 2)}{columns}" )
@@ -167,7 +178,7 @@ else:
             return key_pressed
         else:
             return conv_arrows[getch()]
-        
+
 
 # INSTRUCTIONS
 def instructions():
@@ -363,15 +374,15 @@ press any button to continue"""
                             getch()
                 else:
                     beeper()
-            
+
             # instructions
             case "i":
                 instructions()
                 print_folder()
-
+                
             case _:
                 pass
 
-        
+
 if __name__ == "__main__":
     main()
