@@ -21,6 +21,7 @@ dimension = False
 time_modified = False
 hidden = False
 beep = False
+permission = False
 index = 0  # dummy index
 order = 0
 current_directory = None
@@ -105,18 +106,26 @@ def dir_printer(position = True):
             columns += f" |{'v' if order == 1 else ' '}*SIZE*{' '*(l_size-6)}"
         if time_modified and True in (os.path.isfile(x) for x in directory()):
             columns += f" |{'v' if order == 2 else ' '}*TIME_M*{' '*11}"
+        if permission: 
+            columns += f" |{'v' if order == 2 else ' '}*PERM*"
 
         to_print.append( f"{' '*(columns_len - len(columns)-8)}{columns}" )
 
         for x in directory()[from_file: from_file + rows_len - 3]:
             to_print.append( f"\n {'<' if os.path.isdir(x) else ' '}" )
+
             columns = ""
             if dimension and os.path.isfile(x):
                 columns += f" | {file_size(x)}{' '*(l_size - len(file_size(x)))}"
             if time_modified and os.path.isfile(x):
                 columns += f" | {time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(time.ctime(os.lstat(x).st_mtime)))}"
+            if permission:
+                permissions = os.stat(x).st_mode
+                columns += f" | {'r' if permissions & 0o400 else '_'} {'w' if permissions & 0o200 else '_'} {'e' if permissions & 0o100 else '_'} "
+                
             name_x = f"{f'... {x[-(columns_len - 6 - len(columns)):]}' if len(x) > columns_len - 2 - len(columns) else x}"
             to_print.append( f"{name_x}{' '*(columns_len-len(name_x)-len(columns) - 2)}{columns}" )
+
     print("".join(to_print), end = "\r")
 
     if position:
@@ -187,7 +196,7 @@ def print_folder(refresh = False):
 
 # FILE MANAGER
 def main(*args):
-    global index, dimension, time_modified, from_file, hidden, rows_len, columns_len, beep, instruction_string
+    global index, dimension, time_modified, from_file, hidden, rows_len, columns_len, beep, instruction_string, permission
     
     if args and args[0] in ["-p", "--picker"]:
         global picker
@@ -207,10 +216,13 @@ h = toggle hidden files
 d = toggle file size
 t = toggle time last modified
 b = toggle beep
+p = toggle permission
 m = change ordering
 enter = {
         'select file' if picker else 'open using the default application launcher'}
 e = {'--disabled--' if picker else 'edit using command-line editor'}
+
+def selection_permission(path):
 
 press any button to continue"""
 
@@ -222,7 +234,7 @@ press any button to continue"""
 
         rows_len = os.get_terminal_size().lines
         columns_len = os.get_terminal_size().columns
-        if rows_len < 4 or columns_len < 40:
+        if rows_len < 4 or columns_len < 50:
             clear()
             sys.exit("The terminal is too small, resize it")
 
@@ -299,6 +311,11 @@ press any button to continue"""
             # beep
             case "b":
                 beep = not beep
+
+            # permission
+            case "p":
+                permission = not permission
+                print_folder()
 
             # change order
             case "m":
