@@ -27,7 +27,6 @@ order = 0
 current_directory = None
 from_file = 0
 rows_len = os.get_terminal_size().lines
-columns_len = os.get_terminal_size().columns
 instruction_string = None
 
 
@@ -88,7 +87,8 @@ elif os.name == "posix":
 # PRINTING FUNCTION
 def dir_printer(position = True):
     clear()
-
+    # length of columns
+    columns_len = os.get_terminal_size().columns
     # path directory
     to_print = ["### pyleManager --- press i for instructions ###"[:columns_len], "\n"]
     # name folder
@@ -196,7 +196,7 @@ def print_folder(refresh = False):
 
 # FILE MANAGER
 def main(*args):
-    global index, dimension, time_modified, from_file, hidden, rows_len, columns_len, beep, instruction_string, permission
+    global index, dimension, time_modified, from_file, hidden, rows_len, beep, instruction_string, permission
     
     if args and args[0] in ["-p", "--picker"]:
         global picker
@@ -233,11 +233,7 @@ press any button to continue"""
         button = get_key()
 
         rows_len = os.get_terminal_size().lines
-        columns_len = os.get_terminal_size().columns
-        if rows_len < 4 or columns_len < 50:
-            clear()
-            sys.exit("The terminal is too small, resize it")
-
+        
         if len(directory()) > 0:
             selection = directory()[index] # + file name if any
 
