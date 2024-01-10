@@ -3,10 +3,10 @@ import os, sys, time, argparse
 from platform import system
 from itertools import chain
 
-if os.name == "nt":
-    from msvcrt import getch
-elif os.name == "posix":
+if os.name == "posix":
     import termios, tty
+elif os.name == "nt":
+    from msvcrt import getch
 else:
     sys.exit("Operating system not recognised")
 
@@ -91,12 +91,13 @@ def directory():
 
 
 # CLEAN TERMINAL
-if os.name == "nt":
-    def clear():
-        os.system("cls")
-elif os.name == "posix":
+if os.name == "posix":
     def clear():
         os.system("clear")
+elif os.name == "nt":
+    def clear():
+        os.system("cls")
+
 
 
 # PRINTING FUNCTION
@@ -170,7 +171,7 @@ if os.name == "posix":
                     return conv_arrows[getch()]
             case _:
                 return key_pressed
-else:
+elif os.name == "nt":
     conv_table = {
         b"i":"i", b"q":"q", b"r":"r", b"h":"h",
         b"d":"d", b"t":"t", b"b":"b", b"p":"p",
