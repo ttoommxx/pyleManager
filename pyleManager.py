@@ -21,7 +21,7 @@ dimension = False
 time_modified = False
 hidden = False
 order = 0
-
+current_directory = None
 
 # INSTRUCTION PRINTER
 def instructions():
@@ -67,29 +67,41 @@ def file_size(path):
 
 # UPDATE ORDER, 0 stay 1 next
 def order_update(j):
-    global order
+    global order, current_directory
     vec = (1, int(dimension)*(True in (os.path.isfile(x) for x in directory())),
             int(time_modified)*(True in (os.path.isfile(x) for x in directory())))
     order = vec.index(1,order+j) if 1 in vec[order+j:] else 0
+    current_directory = None
+
+
+# CHANGE HIDDEN STATE
+def change_hidden():
+    global hidden, current_directory
+    hidden = not hidden
+    current_directory = None
 
 
 # LIST OF FOLDERS AND FILES
 def directory():
-    # order by
-    match order:
-        # size
-        case 1:
-            dirs = list( chain( (x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])), \
-                                ( x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
-        # time modified
-        case 2:
-            dirs = list(chain( (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])), \
-                                (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
-        # name
-        case _: # 0 and unrecognised values
-            dirs = list( chain( sorted( (x for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") ) ), key=lambda s: s.lower()),\
-                                sorted((x for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )), key=lambda s: s.lower()) ) )
-    return dirs
+    global current_directory
+    # return the previous value if exists
+    if current_directory is None:
+        # order by
+        match order:
+            # size
+            case 1:
+                dirs = list( chain( (x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])), \
+                                    ( x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
+            # time modified
+            case 2:
+                dirs = list(chain( (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])), \
+                                    (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
+            # name
+            case _: # 0 and unrecognised values
+                dirs = list( chain( sorted( (x for x in os.listdir() if os.path.isdir(x) and (hidden or not x.startswith(".") ) ), key=lambda s: s.lower()),\
+                                    sorted((x for x in os.listdir() if os.path.isfile(x) and (hidden or not x.startswith(".") )), key=lambda s: s.lower()) ) )
+        current_directory = dirs
+    return current_directory
 
 
 # CLEAN TERMINAL
@@ -135,7 +147,8 @@ def dir_printer():
                 columns += f" | {time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(time.ctime(os.lstat(x).st_mtime)))}"
             name_x = f"{f'... {x[-(max_l - 6 - len(columns)):]}' if len(x) > max_l - 2 - len(columns) else x}"
             to_print.append( f"{name_x}{' '*(max_l-len(name_x)-len(columns) - 2)}{columns}" )
-    print("".join(to_print))
+    final_string = "".join(to_print)
+    print(final_string)
 
 
 # FETCH KEYBOARD INPUT
@@ -180,7 +193,7 @@ def main(*args):
     if args and args[0] in ["-p", "--picker"]:
         global picker
         picker = True
-    global index, dimension, time_modified, hidden
+    global index, dimension, time_modified
     dir_printer()
     while True:
         if len(directory()) > 0:
@@ -194,7 +207,7 @@ def main(*args):
             # toggle hidden
             case "h":
                 temp = directory()[index]
-                hidden = not hidden
+                change_hidden()
                 if len(directory()) > 0:
                     if temp in directory(): # update index
                         index = directory().index(temp)
