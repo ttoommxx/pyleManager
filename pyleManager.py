@@ -367,6 +367,7 @@ press any button to continue"""
                                 clear()
                                 print("system not recognised, press any button to continue")
                                 getch()
+                                print_folder()
                 else:
                     beeper()
             
@@ -382,6 +383,7 @@ press any button to continue"""
                             print(
                                 "Windows does not have any built-in command line editor, press any button to continue")
                             getch()
+                            print_folder()
                         case "Darwin":
                             os.system(f"open -e \"{selection}\"")
                         case _:
@@ -389,6 +391,7 @@ press any button to continue"""
                             print(
                                 "system not recognised, press any button to continue")
                             getch()
+                            print_folder()
                 else:
                     beeper()
 
