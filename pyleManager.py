@@ -6,7 +6,7 @@ from itertools import chain
 if os.name == "posix":
     import termios, tty
 elif os.name == "nt":
-    from msvcrt import getch
+    from msvcrt import getch as getch_encoded
 else:
     sys.exit("Operating system not recognised")
 
@@ -72,18 +72,18 @@ def directory():
             case 1:
                 dirs = list( chain( (x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir()
                                                            if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])),
-                                    ( x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir()
-                                                            if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
+                                    (x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir()
+                                                           if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
             # time modified
             case 2:
                 dirs = list( chain( (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir()
-                                                          if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])),
+                                                           if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])),
                                     (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir()
                                                            if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
             # name
             case _: # 0 and unrecognised values
-                dirs = list( chain( sorted( (x for x in os.listdir()
-                                             if os.path.isdir(x) and (hidden or not x.startswith(".") ) ), key=lambda s: s.lower()),
+                dirs = list( chain( sorted((x for x in os.listdir()
+                                            if os.path.isdir(x) and (hidden or not x.startswith(".") ) ), key=lambda s: s.lower()),
                                     sorted((x for x in os.listdir()
                                             if os.path.isfile(x) and (hidden or not x.startswith(".") )), key=lambda s: s.lower()) ) )
         current_directory = dirs
@@ -97,7 +97,6 @@ if os.name == "posix":
 elif os.name == "nt":
     def clear():
         os.system("cls")
-
 
 
 # PRINTING FUNCTION
@@ -160,6 +159,7 @@ if os.name == "posix":
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
+    
     conv_arrows = {"D":"left", "C":"right", "A":"up", "B":"down"}
     def get_key():
         key_pressed = getch()
@@ -168,22 +168,23 @@ if os.name == "posix":
                 return "enter"
             case "\x1b":
                 if getch() == "[":
-                    return conv_arrows[getch()]
+                    return conv_arrows.get(getch(), None)
             case _:
                 return key_pressed
 elif os.name == "nt":
-    conv_table = {
-        b"i":"i", b"q":"q", b"r":"r", b"h":"h",
-        b"d":"d", b"t":"t", b"b":"b", b"p":"p",
-        b"m":"m", b"\r":"enter", b"e":"e", b"\xe0":"arrows"
-        }
-    conv_arrows = {b"K":"left", b"M":"right", b"H":"up", b"P":"down"}
+    def getch():
+        return getch_encoded().decode('UTF-8')
+    
+    conv_arrows = {"K":"left", "M":"right", "H":"up", "P":"down"}
     def get_key():
-        key_pressed = conv_table[getch()]
-        if key_pressed != "arrows":
-            return key_pressed
-        else:
-            return conv_arrows[getch()]
+        key_pressed = getch()
+        match key_pressed:
+            case "\r":
+                return "enter"
+            case "\xe0":
+                return conv_arrows.get(getch(), None)
+            case _:
+                return key_pressed
 
 
 # INSTRUCTIONS
@@ -191,7 +192,7 @@ def instructions():
     clear()
     print(instruction_string, end = "")
     getch()
-        
+
 
 # BEEP
 def beeper():
