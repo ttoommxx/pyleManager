@@ -11,7 +11,7 @@ else:
     sys.exit("Operating system not recognised")
 
 
-# ARGUMENT PARTSER
+# ARGUMENT PARSER
 parser = argparse.ArgumentParser(prog="pyleManager", description="file manager written in Python")
 parser.add_argument("-p", "--picker", action="store_true", help="use pyleManager as a file selector")
 args = parser.parse_args() # args.picker contains the modality
@@ -19,7 +19,7 @@ picker = args.picker
 
 
 # GLOBAL VARIABLES
-local_folder = f"{os.path.abspath(os.getcwd())}/" # save original path
+local_folder = os.path.abspath(os.getcwd()) # save original path
 dimension = False 
 time_modified = False
 hidden = False
@@ -47,20 +47,24 @@ def file_size(path):
 
 # UPDATE ORDER, 0 stay 1 next
 def order_update(j):
-    global order, current_directory
+    global order
+    old_order = order
     # create a vector with (1,a,b) where a,b are one if dimension and time_modified are enabled
     vec = (1,
            dimension * (True in (os.path.isfile(x) for x in directory())),
            time_modified * (True in (os.path.isfile(x) for x in directory())))
     # search the next 1 and if not found return 0
     order = vec.index(1,order+j) if 1 in vec[order+j:] else 0
-    current_directory = None
+    if order != old_order:
+        # only update if the previous order was changed
+        global current_directory
+        current_directory = None
     
 
 # LIST OF FOLDERS AND FILES
 def directory():
-    global current_directory
     # return the previous value if exists
+    global current_directory
     if current_directory is None:
         # order by
         match order:
@@ -103,7 +107,7 @@ def dir_printer(position = True):
     # path directory
     to_print = ["### pyleManager --- press i for instructions ###"[:columns_len], "\n"]
     # name folder
-    to_print.append( f"{'... ' if  len(os.path.abspath(os.getcwd())) > columns_len else ''}{os.path.abspath(os.getcwd())[-columns_len+5:]}/\n" )
+    to_print.append( f"{'... ' if  len(os.path.abspath(os.getcwd())) > columns_len else ''}{os.path.abspath(os.getcwd())[-columns_len+5:]}{os.sep}\n" )
     # folders and pointer
     if len(directory()) == 0:
         to_print.append( " **EMPTY FOLDER**" )
@@ -168,8 +172,9 @@ if os.name == "posix":
                 return key_pressed
 else:
     conv_table = {
-        b"q":"q", b"h":"h", b"m":"m", b"i":"i", b"t":"t", b"d":"d", b"e":"e", b"\r":"enter",
-        b"\xe0":"arrows"
+        b"q":"q", b"r":"r", b"h":"h", b"d":"d",
+        b"t":"t", b"b":"b", b"p":"p", b"m":"m",
+        b"\r":"enter", b"e":"e", b"\xe0":"arrows"
         }
     conv_arrows = {b"K":"left", b"M":"right", b"H":"up", b"P":"down"}
     def get_key():
@@ -241,22 +246,22 @@ press any button to continue"""
 
     while True:
 
-        button = get_key()
-
         rows_len = os.get_terminal_size().lines
         
         if len(directory()) > 0:
             selection = directory()[index] # + file name if any
 
-        match button:
+        match get_key():
             # up
             case "up":
                 if len(directory()) > 0 and index > 0:
                     index -= 1
                     if index >= from_file:
+                        # print up when we are in the range of visibility
                         sys.stdout.write('\033[2A')
                         print()
                     else:
+                        # else print up one
                         from_file -= 1
                         dir_printer()
                 else:
@@ -266,9 +271,11 @@ press any button to continue"""
             case "down":
                 if len(directory()) > 0 and index < len(directory())-1:
                     index += 1
-                    if index < rows_len - 3:
+                    if index < rows_len - 3 + from_file:
+                        # print down when we are in the range of visibility
                         print()
                     else:
+                        # else print down 1
                         from_file += 1
                         dir_printer(position=False)
                 else:
@@ -333,7 +340,7 @@ press any button to continue"""
             case "enter":
                 if len(directory()) > 0:
                     if picker:
-                        path = f"{os.getcwd()}/{selection}{'/' if  os.path.isdir(selection) else ''}"
+                        path = os.path.join(os.getcwd(), selection) #{os.sep if os.path.isdir(selection) else ''}"
                         clear()
                         os.chdir(local_folder)
                         return path
