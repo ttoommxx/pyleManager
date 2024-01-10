@@ -172,9 +172,9 @@ if os.name == "posix":
                 return key_pressed
 else:
     conv_table = {
-        b"q":"q", b"r":"r", b"h":"h", b"d":"d",
-        b"t":"t", b"b":"b", b"p":"p", b"m":"m",
-        b"\r":"enter", b"e":"e", b"\xe0":"arrows"
+        b"i":"i", b"q":"q", b"r":"r", b"h":"h",
+        b"d":"d", b"t":"t", b"b":"b", b"p":"p",
+        b"m":"m", b"\r":"enter", b"e":"e", b"\xe0":"arrows"
         }
     conv_arrows = {b"K":"left", b"M":"right", b"H":"up", b"P":"down"}
     def get_key():
