@@ -1,7 +1,6 @@
 # REQUIRED MODULES
-import os, sys, time, argparse
+import os, sys, time, argparse, itertools
 from platform import system
-from itertools import chain
 
 if os.name == "posix":
     import termios, tty
@@ -67,25 +66,26 @@ def directory():
     # return the previous value if exists
     global current_directory
     if current_directory is None:
+        directories = os.listdir()
         # order by
         match order:
             # size
             case 1:
-                dirs = list( chain( (x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir()
+                dirs = list( itertools.chain( (x[0] for x in sorted({x:os.lstat(x).st_size for x in directories
                                                            if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])),
-                                    (x[0] for x in sorted({x:os.lstat(x).st_size for x in os.listdir()
+                                    (x[0] for x in sorted({x: os.lstat(x).st_size for x in directories
                                                            if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
             # time modified
             case 2:
-                dirs = list( chain( (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir()
+                dirs = list( itertools.chain( (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in directories
                                                            if os.path.isdir(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])),
-                                    (x[0] for x in sorted({x:os.lstat(x).st_mtime for x in os.listdir()
+                                    (x[0] for x in sorted({x: os.lstat(x).st_mtime for x in directories
                                                            if os.path.isfile(x) and (hidden or not x.startswith(".") )}.items(), key=lambda x:x[1])) ) )
             # name
             case _: # 0 and unrecognised values
-                dirs = list( chain( sorted((x for x in os.listdir()
+                dirs = list( itertools.chain( sorted((x for x in directories
                                             if os.path.isdir(x) and (hidden or not x.startswith(".") ) ), key=lambda s: s.lower()),
-                                    sorted((x for x in os.listdir()
+                                    sorted((x for x in directories
                                             if os.path.isfile(x) and (hidden or not x.startswith(".") )), key=lambda s: s.lower()) ) )
         current_directory = dirs
     return current_directory
@@ -119,6 +119,7 @@ def dir_printer(position = True):
         order_update(0)
         l_size = max((len(file_size(x)) for x in directory()))
     
+        # write the description on top
         to_print.append( f" {'v' if order == 0 else ' '}*NAME*" )
         columns = ""
         if dimension and any(os.path.isfile(x) for x in directory()):
@@ -130,9 +131,10 @@ def dir_printer(position = True):
 
         to_print.append( f"{' '*(columns_len - len(columns)-8)}{columns}" )
 
-        for x in directory()[from_file: from_file + rows_len - 3]:
+        for x in itertools.islice(directory(), from_file, from_file + rows_len - 3):
             to_print.append( f"\n {'<' if os.path.isdir(x) else ' '}" )
 
+            # add extensions
             columns = ""
             if dimension and os.path.isfile(x):
                 columns += f" | {file_size(x)}{' '*(l_size - len(file_size(x)))}"
@@ -140,7 +142,10 @@ def dir_printer(position = True):
                 columns += f" | {time.strftime('%Y-%m-%d %H:%M:%S', time.strptime(time.ctime(os.lstat(x).st_mtime)))}"
             if permission:
                 permissions = os.stat(x).st_mode
-                columns += f" | {'r' if permissions & 0o400 else '-'} {'w' if permissions & 0o200 else '-'} {'e' if permissions & 0o100 else '-'} "
+                read_x = os.access(x, os.R_OK)
+                write_x = os.access(x, os.W_OK)
+                execute_x = os.access(x, os.X_OK)
+                columns += f" | {'r' if read_x else '-'} {'w' if write_x else '-'} {'x' if execute_x else '-'} "
                 
             name_x = f"{f'... {x[-(columns_len - 6 - len(columns)):]}' if len(x) > columns_len - 2 - len(columns) else x}"
             to_print.append( f"{name_x}{' '*(columns_len-len(name_x)-len(columns) - 2)}{columns}" )
@@ -210,7 +215,7 @@ def beeper():
 
 
 # RESET FOLDER SETTINGS
-def print_folder(refresh = False):
+def dir_printer_reset(refresh = False):
     global from_file, index, rows_len
     rows_len = os.get_terminal_size().lines
     from_file = 0
@@ -225,7 +230,7 @@ def print_folder(refresh = False):
 def main(*args):
     global index, dimension, time_modified, from_file, hidden, rows_len, beep, instruction_string, permission
     
-    if args and args[0] in ["-p", "--picker"]:
+    if args and args[0] in ("-p", "--picker"):
         global picker
         picker = True
     
@@ -292,9 +297,9 @@ press any button to continue"""
 
             # right
             case "right":
-                if len(directory()) > 0 and os.path.isdir(selection):
+                if len(directory()) > 0 and os.path.isdir(selection) and os.access(selection, os.R_OK):
                     os.chdir(selection)
-                    print_folder(refresh=True)
+                    dir_printer_reset(refresh=True)
                 else:
                     beeper()
 
@@ -302,7 +307,7 @@ press any button to continue"""
             case "left":
                 if os.path.dirname(os.getcwd()) != os.getcwd():
                     os.chdir("..")
-                    print_folder(refresh=True)
+                    dir_printer_reset(refresh=True)
                 else:
                     beeper()
 
@@ -314,22 +319,22 @@ press any button to continue"""
             
             # refresh
             case "r":
-                print_folder(refresh = True)
+                dir_printer_reset(refresh = True)
             
             # toggle hidden
             case "h":
                 hidden = not hidden
-                print_folder(refresh = True)
+                dir_printer_reset(refresh = True)
             
             # size
             case "d":
                 dimension = not dimension
-                print_folder()
+                dir_printer_reset()
 
             # time
             case "t":
                 time_modified = not time_modified
-                print_folder()
+                dir_printer_reset()
 
             # beep
             case "b":
@@ -338,12 +343,12 @@ press any button to continue"""
             # permission
             case "p":
                 permission = not permission
-                print_folder()
+                dir_printer_reset()
 
             # change order
             case "m":
                 order_update(1)
-                print_folder()
+                dir_printer_reset()
                 
             # enter
             case "enter":
@@ -366,7 +371,7 @@ press any button to continue"""
                                 clear()
                                 print("system not recognised, press any button to continue")
                                 getch()
-                                print_folder()
+                                dir_printer_reset()
                 else:
                     beeper()
             
@@ -382,7 +387,7 @@ press any button to continue"""
                             print(
                                 "Windows does not have any built-in command line editor, press any button to continue")
                             getch()
-                            print_folder()
+                            dir_printer_reset()
                         case "Darwin":
                             os.system(f"open -e \"{selection}\"")
                         case _:
@@ -390,14 +395,14 @@ press any button to continue"""
                             print(
                                 "system not recognised, press any button to continue")
                             getch()
-                            print_folder()
+                            dir_printer_reset()
                 else:
                     beeper()
 
             # instructions
             case "i":
                 instructions()
-                print_folder()
+                dir_printer_reset()
                 
             case _:
                 pass
