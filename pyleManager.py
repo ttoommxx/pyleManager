@@ -30,6 +30,7 @@ current_directory = None
 from_file = 0
 rows_len = os.get_terminal_size().lines
 instruction_string = None
+selection = None
 
 
 # RETURN FILE SIZE AS A STRING
@@ -101,7 +102,32 @@ elif os.name == "nt":
 
 
 # PRINTING FUNCTION
-def dir_printer(position = True):
+def dir_printer(position = "beginning"):
+    global from_file, index
+
+    # first check if I only have to print the index:
+    if position == "up":
+        index -= 1
+        if index >= from_file:
+            # print up when we are in the range of visibility
+            sys.stdout.write('\033[2A')
+            print()
+            return # exit the function
+        else:
+            # else print up one
+            from_file -= 1
+            position = "beginning" # return the cursor up
+
+    elif position == "down":
+        index += 1
+        if index < rows_len - 3 + from_file:
+            # print down when we are in the range of visibility
+            print()
+            return # exit the function
+        else:
+            # else print down 1
+            from_file += 1
+
     clear()
     # length of columns
     columns_len = os.get_terminal_size().columns
@@ -131,6 +157,10 @@ def dir_printer(position = True):
 
         to_print.append( f"{' '*(columns_len - len(columns)-8)}{columns}" )
 
+        # check where the previous file was
+        if position == "index":
+            pass
+
         for x in itertools.islice(directory(), from_file, from_file + rows_len - 3):
             to_print.append( f"\n {'<' if os.path.isdir(x) else ' '}" )
 
@@ -152,9 +182,11 @@ def dir_printer(position = True):
 
     print("".join(to_print), end = "\r")
 
-    if position:
+    if position == "beginning":
         sys.stdout.write(f'\033[{ min(len(directory()), rows_len-3)  }A')
         print()
+    elif position == "index":
+        pass
     
 
 # FETCH KEYBOARD INPUT
@@ -216,12 +248,12 @@ def dir_printer_reset(refresh = False):
     if refresh:
         global current_directory
         current_directory = None
-    dir_printer()
+    dir_printer(position = "beginning")
 
 
 # FILE MANAGER
 def main(*args):
-    global index, dimension, time_modified, from_file, hidden, rows_len, beep, instruction_string, permission
+    global index, dimension, time_modified, from_file, hidden, rows_len, beep, instruction_string, permission, selection
     
     if args and args[0] in ("-p", "--picker"):
         global picker
@@ -262,29 +294,14 @@ press any button to continue"""
             # up
             case "up":
                 if len(directory()) > 0 and index > 0:
-                    index -= 1
-                    if index >= from_file:
-                        # print up when we are in the range of visibility
-                        sys.stdout.write('\033[2A')
-                        print()
-                    else:
-                        # else print up one
-                        from_file -= 1
-                        dir_printer()
+                    dir_printer(position = "up")
                 else:
                     beeper()
 
             # down
             case "down":
                 if len(directory()) > 0 and index < len(directory())-1:
-                    index += 1
-                    if index < rows_len - 3 + from_file:
-                        # print down when we are in the range of visibility
-                        print()
-                    else:
-                        # else print down 1
-                        from_file += 1
-                        dir_printer(position=False)
+                    dir_printer(position = "down")
                 else:
                     beeper()
 
@@ -352,14 +369,14 @@ press any button to continue"""
                         os.chdir(local_folder)
                         return path
                     elif not picker:
-                        selection = selection.replace("\"", "\\\"")
+                        selection_os = selection.replace("\"", "\\\"")
                         match system():
                             case "Linux":
-                                os.system(f"xdg-open \"{selection}\"")
+                                os.system(f"xdg-open \"{selection_os}\"")
                             case "Windows":
-                                os.system(selection)
+                                os.system(selection_os)
                             case "Darwin":
-                                os.system(f"open \"{selection}\"")
+                                os.system(f"open \"{selection_os}\"")
                             case _:
                                 clear()
                                 print("system not recognised, press any button to continue")
@@ -371,10 +388,10 @@ press any button to continue"""
             # command-line editor
             case "e":
                 if len(directory()) > 0 and not picker:
-                    selection = selection.replace("\"", "\\\"")
+                    selection_os = selection.replace("\"", "\\\"")
                     match system():
                         case "Linux":
-                            os.system(f"$EDITOR \"{selection}\"")
+                            os.system(f"$EDITOR \"{selection_os}\"")
                         case "Windows":
                             clear()
                             print(
@@ -382,7 +399,7 @@ press any button to continue"""
                             get_key()
                             dir_printer_reset()
                         case "Darwin":
-                            os.system(f"open -e \"{selection}\"")
+                            os.system(f"open -e \"{selection_os}\"")
                         case _:
                             clear()
                             print(
