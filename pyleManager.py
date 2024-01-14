@@ -157,10 +157,6 @@ def dir_printer(position = "beginning"):
 
         to_print.append( f"{' '*(columns_len - len(columns)-8)}{columns}" )
 
-        # check where the previous file was
-        if position == "index":
-            pass
-
         for x in itertools.islice(directory(), from_file, from_file + rows_len - 3):
             to_print.append( f"\n {'<' if os.path.isdir(x) else ' '}" )
 
@@ -186,7 +182,11 @@ def dir_printer(position = "beginning"):
         sys.stdout.write(f'\033[{ min(len(directory()), rows_len-3)  }A')
         print()
     elif position == "index":
-        pass
+        if index < min(rows_len - 3, len(directory())):
+            sys.stdout.write(f'\033[{ min(len(directory()), rows_len-3) - index }A')
+            print()
+        else:
+            index = min(rows_len - 3, len(directory()))-1
     
 
 # FETCH KEYBOARD INPUT
@@ -240,15 +240,16 @@ def beeper():
 
 
 # RESET FOLDER SETTINGS
-def dir_printer_reset(refresh = False):
+def dir_printer_reset(refresh = False, restore_position = "beginning"):
     global from_file, index, rows_len
     rows_len = os.get_terminal_size().lines
     from_file = 0
-    index = 0
+    if restore_position != "index":
+        index = 0
     if refresh:
         global current_directory
         current_directory = None
-    dir_printer(position = "beginning")
+    dir_printer(position = restore_position)
 
 
 # FILE MANAGER
@@ -309,7 +310,7 @@ press any button to continue"""
             case "right":
                 if len(directory()) > 0 and os.path.isdir(selection) and os.access(selection, os.R_OK):
                     os.chdir(selection)
-                    dir_printer_reset(refresh=True)
+                    dir_printer_reset(refresh=True, restore_position = "index")
                 else:
                     beeper()
 
@@ -317,7 +318,7 @@ press any button to continue"""
             case "left":
                 if os.path.dirname(os.getcwd()) != os.getcwd():
                     os.chdir("..")
-                    dir_printer_reset(refresh=True)
+                    dir_printer_reset(refresh=True, restore_position = "index")
                 else:
                     beeper()
 
