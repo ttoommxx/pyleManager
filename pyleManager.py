@@ -200,13 +200,6 @@ elif os.name == "nt":
                 return key_pressed
 
 
-# INSTRUCTIONS
-def instructions():
-    clear()
-    print(instruction_string, end = "")
-    getch()
-
-
 # BEEP
 def beeper():
     if beep:
@@ -370,7 +363,7 @@ press any button to continue"""
                             case _:
                                 clear()
                                 print("system not recognised, press any button to continue")
-                                getch()
+                                get_key()
                                 dir_printer_reset()
                 else:
                     beeper()
@@ -386,7 +379,7 @@ press any button to continue"""
                             clear()
                             print(
                                 "Windows does not have any built-in command line editor, press any button to continue")
-                            getch()
+                            get_key()
                             dir_printer_reset()
                         case "Darwin":
                             os.system(f"open -e \"{selection}\"")
@@ -394,14 +387,16 @@ press any button to continue"""
                             clear()
                             print(
                                 "system not recognised, press any button to continue")
-                            getch()
+                            get_key()
                             dir_printer_reset()
                 else:
                     beeper()
 
             # instructions
             case "i":
-                instructions()
+                clear()
+                print(instruction_string, end = "")
+                get_key()
                 dir_printer_reset()
                 
             case _:
