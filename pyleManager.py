@@ -194,6 +194,7 @@ def dir_printer(position = "beginning"):
             sys.stdout.write(f'\033[{ min(len(directory()), rows_len-3) - index }A')
             print()
 
+
 # FETCH KEYBOARD INPUT
 if os.name == "posix":
     def getch():
