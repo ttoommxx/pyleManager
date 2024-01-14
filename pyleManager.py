@@ -141,6 +141,7 @@ def dir_printer(position = "beginning"):
     # folders and pointer
     if len(directory()) == 0:
         to_print.append( " **EMPTY FOLDER**" )
+        position = None
     else:
         order_update(0)
         l_size = max((len(file_size(x)) for x in directory()))
@@ -156,6 +157,13 @@ def dir_printer(position = "beginning"):
             columns += f" | *PERM*"
 
         to_print.append( f"{' '*(columns_len - len(columns)-8)}{columns}" )
+
+        if position == "index":
+            index = min(index, len(directory())-1)
+            if index < rows_len - 3:
+                pass
+            else:
+                from_file = index - (rows_len - 3) + 1
 
         for x in itertools.islice(directory(), from_file, from_file + rows_len - 3):
             to_print.append( f"\n {'<' if os.path.isdir(x) else ' '}" )
@@ -182,12 +190,9 @@ def dir_printer(position = "beginning"):
         sys.stdout.write(f'\033[{ min(len(directory()), rows_len-3)  }A')
         print()
     elif position == "index":
-        if index < min(rows_len - 3, len(directory())):
+        if index < rows_len - 3:
             sys.stdout.write(f'\033[{ min(len(directory()), rows_len-3) - index }A')
             print()
-        else:
-            index = min(rows_len - 3, len(directory()))-1
-    
 
 # FETCH KEYBOARD INPUT
 if os.name == "posix":
@@ -242,13 +247,23 @@ def beeper():
 # RESET FOLDER SETTINGS
 def dir_printer_reset(refresh = False, restore_position = "beginning"):
     global from_file, index, rows_len
-    rows_len = os.get_terminal_size().lines
-    from_file = 0
-    if restore_position != "index":
-        index = 0
     if refresh:
         global current_directory
         current_directory = None
+
+    rows_len = os.get_terminal_size().lines
+    from_file = 0
+    if restore_position == "index":
+        pass
+    elif restore_position == "selection":
+        if selection in directory():
+            index = directory().index(selection)
+        else:
+            index = 0
+        restore_position = "index"
+    else:
+        index = 0
+    
     dir_printer(position = restore_position)
 
 
@@ -330,22 +345,22 @@ press any button to continue"""
             
             # refresh
             case "r":
-                dir_printer_reset(refresh = True)
+                dir_printer_reset(refresh = True, restore_position = "selection")
             
             # toggle hidden
             case "h":
                 hidden = not hidden
-                dir_printer_reset(refresh = True)
+                dir_printer_reset(refresh=True, restore_position="selection")
             
             # size
             case "d":
                 dimension = not dimension
-                dir_printer_reset()
+                dir_printer_reset(restore_position="selection")
 
             # time
             case "t":
                 time_modified = not time_modified
-                dir_printer_reset()
+                dir_printer_reset(restore_position="selection")
 
             # beep
             case "b":
@@ -354,12 +369,12 @@ press any button to continue"""
             # permission
             case "p":
                 permission = not permission
-                dir_printer_reset()
+                dir_printer_reset(restore_position="selection")
 
             # change order
             case "m":
                 order_update(1)
-                dir_printer_reset()
+                dir_printer_reset(restore_position="selection")
                 
             # enter
             case "enter":
@@ -382,7 +397,7 @@ press any button to continue"""
                                 clear()
                                 print("system not recognised, press any button to continue")
                                 get_key()
-                                dir_printer_reset()
+                                dir_printer_reset(restore_position="selection")
                 else:
                     beeper()
             
@@ -398,7 +413,7 @@ press any button to continue"""
                             print(
                                 "Windows does not have any built-in command line editor, press any button to continue")
                             get_key()
-                            dir_printer_reset()
+                            dir_printer_reset(restore_position="selection")
                         case "Darwin":
                             os.system(f"open -e \"{selection_os}\"")
                         case _:
@@ -406,7 +421,7 @@ press any button to continue"""
                             print(
                                 "system not recognised, press any button to continue")
                             get_key()
-                            dir_printer_reset()
+                            dir_printer_reset(restore_position="selection")
                 else:
                     beeper()
 
@@ -415,7 +430,7 @@ press any button to continue"""
                 clear()
                 print(instruction_string, end = "")
                 get_key()
-                dir_printer_reset()
+                dir_printer_reset(restore_position="selection")
                 
             case _:
                 pass
