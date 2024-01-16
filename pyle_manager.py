@@ -179,7 +179,8 @@ def dir_printer(position:str = "beginning") -> None:
     # path directory
     to_print = ["### pyleManager --- press i for instructions ###"[:columns_len], "\n"]
     # name folder
-    to_print.append( f"{'... ' if  len(os.path.abspath(os.getcwd())) > columns_len else ''}{os.path.abspath(os.getcwd())[-columns_len+5:]}" )
+    to_print.append( '... ' if  len(os.path.abspath(os.getcwd())) > columns_len else '')
+    to_print.append( os.path.abspath(os.getcwd())[ 5-columns_len: ] )
     if not to_print[-1].endswith(os.sep):
         to_print.append(os.sep)
     to_print.append("\n")
@@ -192,7 +193,8 @@ def dir_printer(position:str = "beginning") -> None:
         l_size = max((len(file_size(x)) for x in directory()))
 
         # write the description on top
-        to_print.append(f" {'v' if settings.order == 0 else ' '}*NAME*")
+        to_print.append(" v*NAME*" if settings.order == 0 else "  *NAME*")
+
         columns = ""
         if settings.size and any(os.path.isfile(x) for x in directory()):
             columns += f" |{'v' if settings.order ==
@@ -203,7 +205,8 @@ def dir_printer(position:str = "beginning") -> None:
         if settings.permission:
             columns += " | *PERM*"
 
-        to_print.append( f"{' '*(columns_len - len(columns)-8)}{columns}" )
+        to_print.append( " "*(columns_len - len(columns)-8))
+        to_print.append(columns)
 
         if position == "index":
             if len(directory())-1 < settings.index:
@@ -213,7 +216,7 @@ def dir_printer(position:str = "beginning") -> None:
                     (settings.rows_length - 3) + 1
 
         for x in itertools.islice(directory(), settings.start_line_directory, settings.start_line_directory + settings.rows_length - 3):
-            to_print.append( f"\n {'<' if os.path.isdir(x) else ' '}" )
+            to_print.append( "\n <" if os.path.isdir(x) else "\n  " )
 
             # add extensions
             columns = ""
@@ -227,8 +230,10 @@ def dir_printer(position:str = "beginning") -> None:
                 execute_x = os.access(x, os.X_OK)
                 columns += f" | {'r' if read_x else '-'} {'w' if write_x else '-'} {'x' if execute_x else '-'} "
 
-            name_x = f"{f'... {x[-(columns_len - 6 - len(columns)):]}' if len(x) > columns_len - 2 - len(columns) else x}"
-            to_print.append( f"{name_x}{' '*(columns_len-len(name_x)-len(columns) - 2)}{columns}" )
+            name_x = f'... {x[-(columns_len - 6 - len(columns)):]}' if len(x) > columns_len - 2 - len(columns) else x
+            to_print.append( name_x )
+            to_print.append( " "*(columns_len-len(name_x)-len(columns) - 2) )
+            to_print.append(columns)
 
     print("".join(to_print), end = "\r")
 
