@@ -195,15 +195,18 @@ def dir_printer(position:str = "beginning") -> None:
         # write the description on top
         to_print.append(" v*NAME*" if settings.order == 0 else "  *NAME*")
 
-        columns = ""
+        columns = []
         if settings.size and any(os.path.isfile(x) for x in directory()):
-            columns += f" |{'v' if settings.order ==
-                            1 else ' '}*SIZE*{' '*(l_size-6)}"
+            columns.append( " |v" if settings.order == 1 else " | " )
+            columns.append("*SIZE*")
+            columns.append(' '*(l_size-6))
         if settings.time:
-            columns += f" |{'v' if settings.order ==
-                            2 else ' '}*TIME MODIFIED*{' '*4}"
+            columns.append( " |v" if settings.order == 2 else " | " )
+            columns.append( "*TIME MODIFIED*" )
+            columns.append(" "*4)
         if settings.permission:
-            columns += " | *PERM*"
+            columns.append(" | *PERM*")
+        columns = "".join(columns)
 
         to_print.append( " "*(columns_len - len(columns)-8))
         to_print.append(columns)
