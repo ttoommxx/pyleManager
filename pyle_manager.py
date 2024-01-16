@@ -206,10 +206,9 @@ def dir_printer(position:str = "beginning") -> None:
         to_print.append( f"{' '*(columns_len - len(columns)-8)}{columns}" )
 
         if position == "index":
-            settings.index = min(settings.index, len(directory())-1)
-            if settings.index < settings.rows_length - 3:
-                pass
-            else:
+            if len(directory())-1 < settings.index:
+                settings.index = len(directory())-1
+            if settings.index >= settings.rows_length - 3:
                 settings.start_line_directory = settings.index - \
                     (settings.rows_length - 3) + 1
 
