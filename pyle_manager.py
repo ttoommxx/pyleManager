@@ -3,8 +3,9 @@ import os
 import sys
 import time
 import argparse
-import itertools
+from itertools import islice, chain
 from platform import system
+
 
 if os.name == "posix":
     import termios
@@ -28,8 +29,6 @@ PICKER = args.picker
 LOCAL_FOLDER = os.path.abspath(os.getcwd())  # save original path
 
 # mutable settings
-
-
 class Settings:
     """ class containing the global settings """
 
@@ -90,9 +89,7 @@ class Settings:
         if len(directory()) > 0:
             settings.selection = directory()[settings.index]
 
-
 settings = Settings()
-
 
 # --------------------------------------------------
 
@@ -118,7 +115,7 @@ def directory() -> list[str]:
         match settings.order:
             # size
             case 1:
-                dirs = list(itertools.chain(sorted((x for x in directories
+                dirs = list(chain(sorted((x for x in directories
                                                     if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
                                                     key=lambda x: os.lstat(x).st_size),
                                             sorted((x for x in directories
@@ -126,7 +123,7 @@ def directory() -> list[str]:
                                                     key=lambda x: os.lstat(x).st_size)))
             # time modified
             case 2:
-                dirs = list(itertools.chain(sorted((x for x in directories
+                dirs = list(chain(sorted((x for x in directories
                                                     if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
                                                     key=lambda x: os.lstat(x).st_mtime),
                                             sorted((x for x in directories
@@ -134,7 +131,7 @@ def directory() -> list[str]:
                                                     key=lambda x: os.lstat(x).st_mtime)))
             # name
             case _:  # 0 or unrecognised values
-                dirs = list(itertools.chain(sorted((x for x in directories
+                dirs = list(chain(sorted((x for x in directories
                                                     if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
                                                     key=lambda s: s.lower()),
                                             sorted((x for x in directories
@@ -163,8 +160,7 @@ def dir_printer(position: str = "beginning") -> None:
         settings.index -= 1
         if settings.index >= settings.start_line_directory:
             # print up when we are in the range of visibility
-            sys.stdout.write('\033[2A')
-            print()
+            print('\033[2A\n', end="")
             return  # exit the function
 
         # else print up one
@@ -183,14 +179,14 @@ def dir_printer(position: str = "beginning") -> None:
 
     clear()
     # length of columns
-    columns_len = os.get_terminal_size().columns
+    columns_length = os.get_terminal_size().columns
     # path directory
     to_print = [
-        "### pyleManager --- press i for instructions ###"[:columns_len], "\n"]
+        "### pyleManager --- press i for instructions ###"[:columns_length], "\n"]
     # name folder
     to_print.append('... ' if len(os.path.abspath(os.getcwd()))
-                    > columns_len else '')
-    to_print.append(os.path.abspath(os.getcwd())[5-columns_len:])
+                    > columns_length else '')
+    to_print.append(os.path.abspath(os.getcwd())[5-columns_length:])
     if not to_print[-1].endswith(os.sep):
         to_print.append(os.sep)
     to_print.append("\n")
@@ -206,20 +202,23 @@ def dir_printer(position: str = "beginning") -> None:
         to_print.append(" v*NAME*" if settings.order == 0 else "  *NAME*")
 
         columns = []
+        columns_count = 0
         if settings.size and any(os.path.isfile(x) for x in directory()):
             columns.append(" |v" if settings.order == 1 else " | ")
             columns.append("*SIZE*")
             columns.append(' '*(l_size-6))
+            columns_count += 3 + l_size
         if settings.time:
             columns.append(" |v" if settings.order == 2 else " | ")
             columns.append("*TIME MODIFIED*")
             columns.append(" "*4)
+            columns_count += 22
         if settings.permission:
             columns.append(" | *PERM*")
-        columns = "".join(columns)
+            columns_count += 9
 
-        to_print.append(" "*(columns_len - len(columns)-8))
-        to_print.append(columns)
+        to_print.append(" "*(columns_length - columns_count - 8))
+        to_print.extend(columns)
 
         if position == "index":
             if len(directory())-1 < settings.index:
@@ -228,19 +227,22 @@ def dir_printer(position: str = "beginning") -> None:
                 settings.start_line_directory = settings.index - \
                     (settings.rows_length - 3) + 1
 
-        for x in itertools.islice(directory(), settings.start_line_directory, settings.start_line_directory + settings.rows_length - 3):
+        for x in islice(directory(), settings.start_line_directory, settings.start_line_directory + settings.rows_length - 3):
             to_print.append("\n <" if os.path.isdir(x) else "\n  ")
 
             # add extensions
             columns = []
+            columns_count = 0
             if settings.size and os.path.isfile(x):
                 columns.append(" | ")
                 columns.append(file_size(x))
                 columns.append(" "*(l_size - len(file_size(x))))
+                columns_count += 3 + l_size
             if settings.time:
                 columns.append(" | ")
                 columns.append(time.strftime('%Y-%m-%d %H:%M:%S',
                                time.strptime(time.ctime(os.lstat(x).st_mtime))))
+                columns_count += 22
 
             if settings.permission:
                 columns.append(" | ")
@@ -249,25 +251,24 @@ def dir_printer(position: str = "beginning") -> None:
                 columns.append("w " if os.access(x, os.W_OK)
                                else "- ")  # write permission
                 columns.append("x " if os.access(x, os.X_OK) else "- ")
-            columns = "".join(columns)
+                columns_count += 9
 
-            name_x = f'... {x[-(columns_len - 6 - len(columns)):]}' if len(x) > columns_len - 2 - len(columns) else x
+            name_x = f'... {x[-(columns_length - 6 - columns_count):]
+                            }' if len(x) > columns_length - 2 - columns_count else x
             to_print.append(name_x)
-            to_print.append(" "*(columns_len-len(name_x)-len(columns) - 2))
-            to_print.append(columns)
+            to_print.append(" "*(columns_length-len(name_x)-columns_count - 2))
+            to_print.extend(columns)
 
-    print("".join(to_print), end="\r")
+    print(*to_print, sep="", end="\r")
 
     if position == "beginning":
-        sys.stdout.write(
+        print(
             f'\033[{min(len(directory()), settings.rows_length-3)}A')
-        print()
     elif position == "index":
         if settings.index < settings.rows_length - 3:
-            sys.stdout.write(
+            print(
                 f'\033[{min(len(directory()), settings.rows_length-3) - settings.index}A')
-            print()
-
+    
 
 # FETCH KEYBOARD INPUT
 if os.name == "posix":
@@ -320,8 +321,7 @@ elif os.name == "nt":
 def beeper() -> None:
     """ make a beep """
     if settings.beep:
-        sys.stdout.write('\033[2A')
-        print("\a\n")
+        print('\a', end="\r")
 
 
 def dir_printer_reset(refresh: bool = False, restore_position: str = "beginning") -> None:
@@ -378,7 +378,7 @@ press any button to continue""", end="")
 
 def main(*args: list[str]) -> None:
     """ file manager """
-
+    
     if args and args[0] in ("-p", "--picker"):
         global PICKER
         PICKER = True
