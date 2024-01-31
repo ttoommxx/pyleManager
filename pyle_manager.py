@@ -5,7 +5,7 @@ import time
 import argparse
 from itertools import islice, chain
 from platform import system
-
+import threading
 
 if os.name == "posix":
     import termios
@@ -41,9 +41,13 @@ class Settings:
         self.order = 0
         self.current_directory = ""
         self.rows_length = os.get_terminal_size().lines
+        self.cols_length = os.get_terminal_size().columns
         self.start_line_directory = 0
         self.selection = ""
         self.index = 0
+        fd = sys.stdin.fileno()
+        self.terminal_status = (fd, termios.tcgetattr(fd))
+        self.print_latent = False
 
     def change_size(self) -> None:
         """ toggle size """
@@ -80,14 +84,32 @@ class Settings:
             # only update if the previous order was changed
             settings.current_directory = ""
 
-    def update_rows_length(self) -> None:
-        """ update the length of the rows in the terminal window """
-        self.rows_length = os.get_terminal_size().lines
+    def update_terminal_size(self) -> bool:
+        """ update the size of the temrinal window """
+        if os.get_terminal_size().lines != settings.rows_length or os.get_terminal_size().columns != settings.cols_length:
+            self.rows_length = os.get_terminal_size().lines
+            self.cols_length = os.get_terminal_size().columns
+            return True
+        return False
 
-    def update_selection(self):
+    def update_selection(self) -> None:
         """ update the name of the selected folder """
         if len(directory()) > 0:
             settings.selection = directory()[settings.index]
+
+    def key_attach(self) -> None:
+        """ attach key stdin """
+        fd, _ = settings.terminal_status
+        tty.setraw(fd)
+
+    def key_detach(self) -> None:
+        """ detach key stdin """
+        fd, old_settings = settings.terminal_status
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+    def change_print_latent(self) -> None:
+        """ change status latent printer """
+        self.print_latent = not self.print_latent
 
 settings = Settings()
 
@@ -178,15 +200,13 @@ def dir_printer(position: str = "beginning") -> None:
         settings.start_line_directory += 1
 
     clear()
-    # length of columns
-    columns_length = os.get_terminal_size().columns
     # path directory
     to_print = [
-        "### pyleManager --- press i for instructions ###"[:columns_length], "\n"]
+        "### pyleManager --- press i for instructions ###"[:settings.cols_length], "\n"]
     # name folder
     to_print.append('... ' if len(os.path.abspath(os.getcwd()))
-                    > columns_length else '')
-    to_print.append(os.path.abspath(os.getcwd())[5-columns_length:])
+                    > settings.cols_length else '')
+    to_print.append(os.path.abspath(os.getcwd())[5-settings.cols_length:])
     if not to_print[-1].endswith(os.sep):
         to_print.append(os.sep)
     to_print.append("\n")
@@ -217,7 +237,7 @@ def dir_printer(position: str = "beginning") -> None:
             columns.append(" | *PERM*")
             columns_count += 9
 
-        to_print.append(" "*(columns_length - columns_count - 8))
+        to_print.append(" "*(settings.cols_length - columns_count - 8))
         to_print.extend(columns)
 
         if position == "index":
@@ -253,10 +273,10 @@ def dir_printer(position: str = "beginning") -> None:
                 columns.append("x " if os.access(x, os.X_OK) else "- ")
                 columns_count += 9
 
-            name_x = f'... {x[-(columns_length - 6 - columns_count):]
-                            }' if len(x) > columns_length - 2 - columns_count else x
+            name_x = f'... {x[-(settings.cols_length - 6 - columns_count):]
+                            }' if len(x) > settings.cols_length - 2 - columns_count else x
             to_print.append(name_x)
-            to_print.append(" "*(columns_length-len(name_x)-columns_count - 2))
+            to_print.append(" "*(settings.cols_length-len(name_x)-columns_count - 2))
             to_print.extend(columns)
 
     print(*to_print, sep="", end="\r")
@@ -274,13 +294,11 @@ def dir_printer(position: str = "beginning") -> None:
 if os.name == "posix":
     def getch() -> str:
         """ read raw terminal input """
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
         try:
-            tty.setraw(sys.stdin.fileno())
+            settings.key_attach()
             ch = sys.stdin.read(1)
         finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            settings.key_detach()
         return ch
 
     conv_arrows = {"D": "left", "C": "right", "A": "up", "B": "down"}
@@ -326,10 +344,13 @@ def beeper() -> None:
 
 def dir_printer_reset(refresh: bool = False, restore_position: str = "beginning") -> None:
     """ print screen after resetting directory attributes """
+    if os.name == "posix":
+        settings.key_detach()
+
     if refresh:
         settings.current_directory = ""
 
-    settings.update_rows_length()
+    settings.update_terminal_size()
     settings.start_line_directory = 0
     if restore_position == "index":
         pass
@@ -343,6 +364,17 @@ def dir_printer_reset(refresh: bool = False, restore_position: str = "beginning"
         settings.index = 0
 
     dir_printer(position=restore_position)
+
+    if os.name == "posix":
+        settings.key_attach()
+
+
+def latent_printer() -> None:
+    """ threaded function that reprints screen if change in terminal """
+    while settings.print_latent:
+        time.sleep(0.1)
+        if settings.update_terminal_size():
+            dir_printer_reset(refresh=False, restore_position="index")
 
 
 def instructions() -> None:
@@ -363,6 +395,7 @@ d = ({'yes' if settings.size else 'no'}) toggle file size
 t = ({'yes' if settings.time else 'no'}) toggle time last modified
 b = ({'yes' if settings.beep else 'no'}) toggle beep
 p = ({'yes' if settings.permission else 'no'}) toggle permission
+l = ({'yes' if settings.print_latent else 'no'}) toggle automatic refresh on terminal resize
 m = ({("NAME", "SIZE", "TIME MODIFIED")[settings.order]}) change ordering
 enter = {'select file' if PICKER else 'open using the default application launcher'}
 e = {'--disabled--' if PICKER else 'edit using command-line editor'}
@@ -453,6 +486,13 @@ def main(*args: list[str]) -> None:
             case "p":
                 settings.change_permission()
                 dir_printer_reset(restore_position="selection")
+
+            # terminal resize
+            case "l":
+                settings.change_print_latent()
+                # spawns the process regardless, if settings are off it will finish immediately
+                latent_printer_daemon = threading.Thread(target=latent_printer, daemon=True)
+                latent_printer_daemon.start()
 
             # change order
             case "m":
