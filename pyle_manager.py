@@ -344,9 +344,6 @@ def beeper() -> None:
 
 def dir_printer_reset(refresh: bool = False, restore_position: str = "beginning") -> None:
     """ print screen after resetting directory attributes """
-    if os.name == "posix":
-        settings.key_detach()
-
     if refresh:
         settings.current_directory = ""
 
@@ -363,6 +360,9 @@ def dir_printer_reset(refresh: bool = False, restore_position: str = "beginning"
     else:
         settings.index = 0
 
+    if os.name == "posix":
+        settings.key_detach()
+
     dir_printer(position=restore_position)
 
     if os.name == "posix":
@@ -375,6 +375,15 @@ def latent_printer() -> None:
         time.sleep(0.1)
         if settings.update_terminal_size():
             dir_printer_reset(refresh=False, restore_position="index")
+
+
+def pre_quit(latent_printer_daemon: threading.Thread) -> None:
+    """ running to execute before quitting """
+    clear()
+    os.chdir(LOCAL_FOLDER)
+    if settings.print_latent:
+        settings.change_print_latent()
+        latent_printer_daemon.join()
 
 
 def instructions() -> None:
@@ -417,6 +426,9 @@ def main(*args: list[str]) -> None:
         PICKER = True
 
     dir_printer()
+    # mock process
+    latent_printer_daemon = threading.Thread(target=lambda:None, daemon=True)
+    latent_printer_daemon.start()
 
     while True:
 
@@ -455,8 +467,7 @@ def main(*args: list[str]) -> None:
 
             # quit
             case "q":
-                clear()
-                os.chdir(LOCAL_FOLDER)
+                pre_quit(latent_printer_daemon)
                 return
 
             # refresh
@@ -490,9 +501,10 @@ def main(*args: list[str]) -> None:
             # terminal resize
             case "l":
                 settings.change_print_latent()
-                # spawns the process regardless, if settings are off it will finish immediately
-                latent_printer_daemon = threading.Thread(target=latent_printer, daemon=True)
-                latent_printer_daemon.start()
+                latent_printer_daemon.join()
+                if settings.print_latent:
+                    latent_printer_daemon = threading.Thread(target=latent_printer, daemon=True)
+                    latent_printer_daemon.start()                    
 
             # change order
             case "m":
@@ -504,8 +516,7 @@ def main(*args: list[str]) -> None:
                 if len(directory()) > 0:
                     if PICKER:
                         path = os.path.join(os.getcwd(), settings.selection)
-                        clear()
-                        os.chdir(LOCAL_FOLDER)
+                        pre_quit(latent_printer_daemon)
                         return path
                     elif not PICKER:
                         selection_os = settings.selection.replace("\"", "\\\"")
