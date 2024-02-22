@@ -29,6 +29,8 @@ PICKER = args.picker
 LOCAL_FOLDER = os.path.abspath(os.getcwd())  # save original path
 
 # mutable settings
+
+
 class Settings:
     """ class containing the global settings """
 
@@ -111,6 +113,7 @@ class Settings:
         """ change status latent printer """
         self.print_latent = not self.print_latent
 
+
 settings = Settings()
 
 # --------------------------------------------------
@@ -138,27 +141,27 @@ def directory() -> list[str]:
             # size
             case 1:
                 dirs = list(chain(sorted((x for x in directories
-                                                    if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
-                                                    key=lambda x: os.lstat(x).st_size),
-                                            sorted((x for x in directories
-                                                    if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
-                                                    key=lambda x: os.lstat(x).st_size)))
+                                          if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
+                                         key=lambda x: os.lstat(x).st_size),
+                                  sorted((x for x in directories
+                                          if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
+                                         key=lambda x: os.lstat(x).st_size)))
             # time modified
             case 2:
                 dirs = list(chain(sorted((x for x in directories
-                                                    if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
-                                                    key=lambda x: os.lstat(x).st_mtime),
-                                            sorted((x for x in directories
-                                                    if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
-                                                    key=lambda x: os.lstat(x).st_mtime)))
+                                          if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
+                                         key=lambda x: os.lstat(x).st_mtime),
+                                  sorted((x for x in directories
+                                          if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
+                                         key=lambda x: os.lstat(x).st_mtime)))
             # name
             case _:  # 0 or unrecognised values
                 dirs = list(chain(sorted((x for x in directories
-                                                    if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
-                                                    key=lambda s: s.lower()),
-                                            sorted((x for x in directories
-                                                    if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
-                                                    key=lambda s: s.lower())))
+                                          if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
+                                         key=lambda s: s.lower()),
+                                  sorted((x for x in directories
+                                          if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
+                                         key=lambda s: s.lower())))
         settings.current_directory = dirs
     return settings.current_directory
 
@@ -276,7 +279,8 @@ def dir_printer(position: str = "beginning") -> None:
             name_x = f'... {x[-(settings.cols_length - 6 - columns_count):]
                             }' if len(x) > settings.cols_length - 2 - columns_count else x
             to_print.append(name_x)
-            to_print.append(" "*(settings.cols_length-len(name_x)-columns_count - 2))
+            to_print.append(" "*(settings.cols_length -
+                            len(name_x)-columns_count - 2))
             to_print.extend(columns)
 
     print(*to_print, sep="", end="\r")
@@ -288,7 +292,7 @@ def dir_printer(position: str = "beginning") -> None:
         if settings.index < settings.rows_length - 3:
             print(
                 f'\033[{min(len(directory()), settings.rows_length-3) - settings.index}A')
-    
+
 
 # FETCH KEYBOARD INPUT
 if os.name == "posix":
@@ -302,6 +306,7 @@ if os.name == "posix":
         return ch
 
     conv_arrows = {"D": "left", "C": "right", "A": "up", "B": "down"}
+
     def get_key() -> str:
         """ process correct string for keyboard input """
         key_pressed = getch()
@@ -324,6 +329,7 @@ elif os.name == "nt":
             return letter
 
     conv_arrows = {"K": "left", "M": "right", "H": "up", "P": "down"}
+
     def get_key() -> str:
         """ process correct string for keyboard input """
         key_pressed = getch()
@@ -420,14 +426,14 @@ press any button to continue""", end="")
 
 def main(*args: list[str]) -> None:
     """ file manager """
-    
+
     if args and args[0] in ("-p", "--picker"):
         global PICKER
         PICKER = True
 
     dir_printer()
     # mock process
-    latent_printer_daemon = threading.Thread(target=lambda:None, daemon=True)
+    latent_printer_daemon = threading.Thread(target=lambda: None, daemon=True)
     latent_printer_daemon.start()
 
     while True:
@@ -503,8 +509,9 @@ def main(*args: list[str]) -> None:
                 settings.change_print_latent()
                 latent_printer_daemon.join()
                 if settings.print_latent:
-                    latent_printer_daemon = threading.Thread(target=latent_printer, daemon=True)
-                    latent_printer_daemon.start()                    
+                    latent_printer_daemon = threading.Thread(
+                        target=latent_printer, daemon=True)
+                    latent_printer_daemon.start()
 
             # change order
             case "m":
