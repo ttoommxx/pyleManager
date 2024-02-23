@@ -43,7 +43,7 @@ LOCAL_FOLDER = os.path.abspath(os.getcwd())  # save original path
 class Settings:
     """class containing the global settings"""
 
-    def __init__(self) -> NoReturn:
+    def __init__(self):
         self.size = False
         self.time = False
         self.hidden = False
