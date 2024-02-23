@@ -3,9 +3,18 @@ import os
 import sys
 import time
 import argparse
-from itertools import islice, chain
+from itertools import chain
 from platform import system
 import threading
+from typing import Any, Generator, NoReturn
+
+
+# utility functions
+def slice_ij(v: list[Any], i: int, j: int) -> Generator:
+    """ create an iterator for a given array from i to j """
+    # notice that islice does not work this way, but consume the iterable from the beginning
+    return (v[k] for k in range(i, min(len(v), j)))
+
 
 if os.name == "posix":
     import termios
@@ -34,7 +43,7 @@ LOCAL_FOLDER = os.path.abspath(os.getcwd())  # save original path
 class Settings:
     """ class containing the global settings """
 
-    def __init__(self) -> None:
+    def __init__(self) -> NoReturn:
         self.size = False
         self.time = False
         self.hidden = False
@@ -51,27 +60,27 @@ class Settings:
         self.terminal_status = (fd, termios.tcgetattr(fd))
         self.print_latent = False
 
-    def change_size(self) -> None:
+    def change_size(self) -> NoReturn:
         """ toggle size """
         self.size = not self.size
 
-    def change_time(self) -> None:
+    def change_time(self) -> NoReturn:
         """ toggle time """
         self.time = not self.time
 
-    def change_hidden(self) -> None:
+    def change_hidden(self) -> NoReturn:
         """ toggle hidden """
         self.hidden = not self.hidden
 
-    def change_beep(self) -> None:
+    def change_beep(self) -> NoReturn:
         """ toggle beep """
         self.beep = not self.beep
 
-    def change_permission(self) -> None:
+    def change_permission(self) -> NoReturn:
         """ toggle permission """
         self.permission = not self.permission
 
-    def update_order(self, stay: bool) -> None:
+    def update_order(self, stay: bool) -> NoReturn:
         """ update order, False stay, True move to the next entry """
         old_order = settings.order
         # create a vector with (1,a,b) where a,b are one if dimension and TIME_MODIFIED are enabled
@@ -94,22 +103,22 @@ class Settings:
             return True
         return False
 
-    def update_selection(self) -> None:
+    def update_selection(self) -> NoReturn:
         """ update the name of the selected folder """
         if len(directory()) > 0:
             settings.selection = directory()[settings.index]
 
-    def key_attach(self) -> None:
+    def key_attach(self) -> NoReturn:
         """ attach key stdin """
         fd, _ = settings.terminal_status
         tty.setraw(fd)
 
-    def key_detach(self) -> None:
+    def key_detach(self) -> NoReturn:
         """ detach key stdin """
         fd, old_settings = settings.terminal_status
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
-    def change_print_latent(self) -> None:
+    def change_print_latent(self) -> NoReturn:
         """ change status latent printer """
         self.print_latent = not self.print_latent
 
@@ -140,29 +149,29 @@ def directory() -> list[str]:
         match settings.order:
             # size
             case 1:
-                dirs = list(chain(sorted((x for x in directories
-                                          if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
-                                         key=lambda x: os.lstat(x).st_size),
-                                  sorted((x for x in directories
-                                          if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
-                                         key=lambda x: os.lstat(x).st_size)))
+                dirs = chain(sorted((x for x in directories
+                                     if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
+                                    key=lambda x: os.lstat(x).st_size),
+                             sorted((x for x in directories
+                                     if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
+                                    key=lambda x: os.lstat(x).st_size))
             # time modified
             case 2:
-                dirs = list(chain(sorted((x for x in directories
-                                          if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
-                                         key=lambda x: os.lstat(x).st_mtime),
-                                  sorted((x for x in directories
-                                          if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
-                                         key=lambda x: os.lstat(x).st_mtime)))
+                dirs = chain(sorted((x for x in directories
+                                     if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
+                                    key=lambda x: os.lstat(x).st_mtime),
+                             sorted((x for x in directories
+                                     if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
+                                    key=lambda x: os.lstat(x).st_mtime))
             # name
             case _:  # 0 or unrecognised values
-                dirs = list(chain(sorted((x for x in directories
-                                          if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
-                                         key=lambda s: s.lower()),
-                                  sorted((x for x in directories
-                                          if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
-                                         key=lambda s: s.lower())))
-        settings.current_directory = dirs
+                dirs = chain(sorted((x for x in directories
+                                     if os.path.isdir(x) and (settings.hidden or not x.startswith("."))),
+                                    key=lambda s: s.lower()),
+                             sorted((x for x in directories
+                                     if os.path.isfile(x) and (settings.hidden or not x.startswith("."))),
+                                    key=lambda s: s.lower()))
+        settings.current_directory = list(dirs)
     return settings.current_directory
 
 
@@ -177,7 +186,7 @@ elif os.name == "nt":
         os.system("cls")
 
 
-def dir_printer(position: str = "beginning") -> None:
+def dir_printer(position: str = "beginning") -> NoReturn:
     """ printing function """
 
     # first check if I only have to print the index:
@@ -250,7 +259,7 @@ def dir_printer(position: str = "beginning") -> None:
                 settings.start_line_directory = settings.index - \
                     (settings.rows_length - 3) + 1
 
-        for x in islice(directory(), settings.start_line_directory, settings.start_line_directory + settings.rows_length - 3):
+        for x in slice_ij(directory(), settings.start_line_directory, settings.start_line_directory + settings.rows_length - 3):
             to_print.append("\n <" if os.path.isdir(x) else "\n  ")
 
             # add extensions
@@ -342,13 +351,13 @@ elif os.name == "nt":
                 return key_pressed
 
 
-def beeper() -> None:
+def beeper() -> NoReturn:
     """ make a beep """
     if settings.beep:
         print('\a', end="\r")
 
 
-def dir_printer_reset(refresh: bool = False, restore_position: str = "beginning") -> None:
+def dir_printer_reset(refresh: bool = False, restore_position: str = "beginning") -> NoReturn:
     """ print screen after resetting directory attributes """
     if refresh:
         settings.current_directory = ""
@@ -375,7 +384,7 @@ def dir_printer_reset(refresh: bool = False, restore_position: str = "beginning"
         settings.key_attach()
 
 
-def latent_printer() -> None:
+def latent_printer() -> NoReturn:
     """ threaded function that reprints screen if change in terminal """
     while settings.print_latent:
         time.sleep(0.1)
@@ -383,7 +392,7 @@ def latent_printer() -> None:
             dir_printer_reset(refresh=False, restore_position="index")
 
 
-def pre_quit(latent_printer_daemon: threading.Thread) -> None:
+def pre_quit(latent_printer_daemon: threading.Thread) -> NoReturn:
     """ running to execute before quitting """
     clear()
     os.chdir(LOCAL_FOLDER)
@@ -392,7 +401,7 @@ def pre_quit(latent_printer_daemon: threading.Thread) -> None:
         latent_printer_daemon.join()
 
 
-def instructions() -> None:
+def instructions() -> NoReturn:
     """ print instructions """
     clear()
     print(f"""INSTRUCTIONS:
@@ -424,7 +433,7 @@ press any button to continue""", end="")
 # --------------------------------------------------
 
 
-def main(*args: list[str]) -> None:
+def main(*args: list[str]) -> NoReturn:
     """ file manager """
 
     if args and args[0] in ("-p", "--picker"):
