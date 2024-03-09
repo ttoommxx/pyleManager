@@ -1,11 +1,11 @@
-""" built-in cross-platform modules """
+"""built-in cross-platform modules"""
+
 import os
 import time
 import argparse
 from itertools import chain
 from platform import system
-import threading
-import raw_input
+import unicurses as uc
 
 
 # utility functions
@@ -13,11 +13,6 @@ def slice_ij(v: list, i: int, j: int):
     """create an iterator for a given array from i to j"""
     # notice that islice does not work this way, but consume the iterable from the beginning
     return (v[k] for k in range(i, min(len(v), j)))
-
-
-def getkey() -> str:
-    """override the getkey method to return always lower case"""
-    return raw_input.getkey().lower()
 
 
 # parsing args
@@ -28,10 +23,6 @@ parser.add_argument(
     "-p", "--picker", action="store_true", help="use pyleManager as a file selector"
 )
 args = parser.parse_args()  # args.picker contains the modality
-
-
-# immutable settings
-LOCAL_FOLDER = os.path.abspath(os.getcwd())  # save original path
 
 
 # mutable settings
@@ -46,36 +37,59 @@ class Settings:
         self.permission = False
         self.order = 0
         self.current_directory = ""
-        self.rows_length = os.get_terminal_size().lines
-        self.cols_length = os.get_terminal_size().columns
         self.start_line_directory = 0
         self.selection = ""
         self.index = 0
-        self.print_latent = False
         self.picker = args.picker
+        self.file_size_vars = ("b", "kb", "mb", "gb")
+
+        # init variables
+        self.stdscr = None
+        self.local_folder = ""
+        self.rows_length = 0
+        self.cols_length = 0
+
+    def init(self) -> None:
+        """Initiate the terminal"""
+
+        self.local_folder = os.path.abspath(os.getcwd())
+
+        self.stdscr = uc.initscr()
+        uc.cbreak()
+        uc.noecho()
+        uc.keypad(self.stdscr, True)
+        uc.curs_set(0)
+
+        self.update_terminal_size()
 
     def change_size(self) -> None:
         """toggle size"""
+
         self.size = not self.size
 
     def change_time(self) -> None:
         """toggle time"""
+
         self.time = not self.time
 
     def change_hidden(self) -> None:
         """toggle hidden"""
+
         self.hidden = not self.hidden
 
     def change_beep(self) -> None:
         """toggle beep"""
+
         self.beep = not self.beep
 
     def change_permission(self) -> None:
         """toggle permission"""
+
         self.permission = not self.permission
 
     def update_order(self, stay: bool) -> None:
         """update order, False stay, True move to the next entry"""
+
         old_order = self.order
         # create a vector with (1,a,b) where a,b are one if dimension and TIME_MODIFIED are enabled
         settings_enabled = (
@@ -95,33 +109,27 @@ class Settings:
 
     def update_terminal_size(self) -> bool:
         """update the size of the temrinal window"""
+
         if (
-            os.get_terminal_size().lines != self.rows_length
-            or os.get_terminal_size().columns != self.cols_length
+            uc.getmaxyx(self.stdscr)[0] != self.rows_length
+            or uc.getmaxyx(self.stdscr)[1] != self.cols_length
         ):
-            self.rows_length = os.get_terminal_size().lines
-            self.cols_length = os.get_terminal_size().columns
+            self.rows_length = uc.getmaxyx(self.stdscr)[0]
+            self.cols_length = uc.getmaxyx(self.stdscr)[1]
             return True
         return False
 
     def update_selection(self) -> None:
         """update the name of the selected folder"""
+
         if len(directory()) > 0:
             self.selection = directory()[self.index]
 
-    def key_attach(self) -> None:
-        """attach key stdin"""
-        if os.name == "posix":
-            raw_input.keyboard_attach()
+    def quit(self) -> None:
+        """quitting routines"""
 
-    def key_detach(self) -> None:
-        """detach key stdin"""
-        if os.name == "posix":
-            raw_input.keyboard_detach()
-
-    def change_print_latent(self) -> None:
-        """change status latent printer"""
-        self.print_latent = not self.print_latent
+        os.chdir(SETTINGS.local_folder)
+        uc.endwin()
 
 
 SETTINGS = Settings()
@@ -138,7 +146,7 @@ def file_size(path: str) -> str:
     if i > 3:
         i = 3
     size /= 1000**i
-    return f'{size:.2f}{("b", "kb", "mb", "gb")[i]}'
+    return f"{size:.2f}{SETTINGS.file_size_vars[i]}"
 
 
 def directory() -> list[str]:
@@ -380,30 +388,7 @@ def dir_printer_reset(
     else:
         SETTINGS.index = 0
 
-    if os.name == "posix":
-        SETTINGS.key_detach()
-
     dir_printer(position=restore_position)
-
-    if os.name == "posix":
-        SETTINGS.key_attach()
-
-
-def latent_printer() -> None:
-    """threaded function that reprints screen if change in terminal"""
-    while SETTINGS.print_latent:
-        time.sleep(0.1)
-        if SETTINGS.update_terminal_size():
-            dir_printer_reset(refresh=False, restore_position="index")
-
-
-def pre_quit(latent_printer_daemon: threading.Thread) -> None:
-    """running to execute before quitting"""
-    raw_input.clear()
-    os.chdir(LOCAL_FOLDER)
-    if SETTINGS.print_latent:
-        SETTINGS.change_print_latent()
-        latent_printer_daemon.join()
 
 
 def instructions() -> None:
@@ -425,7 +410,6 @@ d = ({'yes' if SETTINGS.size else 'no'}) toggle file size
 t = ({'yes' if SETTINGS.time else 'no'}) toggle time last modified
 b = ({'yes' if SETTINGS.beep else 'no'}) toggle beep
 p = ({'yes' if SETTINGS.permission else 'no'}) toggle permission
-l = ({'yes' if SETTINGS.print_latent else 'no'}) toggle automatic refresh on terminal resize
 m = ({("NAME", "SIZE", "TIME MODIFIED")[SETTINGS.order]}) change ordering
 enter = {'select file' if SETTINGS.picker else 'open using the default application launcher'}
 e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}
@@ -449,9 +433,7 @@ def main(*args: list[str]) -> None:
 
     dir_printer_reset(refresh=True, restore_position="beginning")
 
-    # mock process
-    latent_printer_daemon = threading.Thread(target=lambda: None, daemon=True)
-    latent_printer_daemon.start()
+    SETTINGS.init()
 
     while True:
         SETTINGS.update_selection()
@@ -493,8 +475,8 @@ def main(*args: list[str]) -> None:
 
             # quit
             case "q":
-                pre_quit(latent_printer_daemon)
-                return
+                output = None
+                break
 
             # refresh
             case "r":
@@ -524,16 +506,6 @@ def main(*args: list[str]) -> None:
                 SETTINGS.change_permission()
                 dir_printer_reset(restore_position="selection")
 
-            # terminal resize
-            case "l":
-                SETTINGS.change_print_latent()
-                latent_printer_daemon.join()
-                if SETTINGS.print_latent:
-                    latent_printer_daemon = threading.Thread(
-                        target=latent_printer, daemon=True
-                    )
-                    latent_printer_daemon.start()
-
             # change order
             case "m":
                 SETTINGS.update_order(True)
@@ -544,8 +516,9 @@ def main(*args: list[str]) -> None:
                 if len(directory()) > 0:
                     if SETTINGS.picker:
                         path = os.path.join(os.getcwd(), SETTINGS.selection)
-                        pre_quit(latent_printer_daemon)
-                        return path
+                        output = path
+                        break
+
                     elif not SETTINGS.picker:
                         selection_os = SETTINGS.selection.replace('"', '\\"')
                         match system():
@@ -596,6 +569,10 @@ def main(*args: list[str]) -> None:
 
             case _:
                 pass
+
+    SETTINGS.quit()
+
+    return output
 
 
 if __name__ == "__main__":
