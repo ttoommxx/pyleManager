@@ -36,7 +36,7 @@ class Settings:
         self.beep = False
         self.permission = False
         self.order = 0
-        self.current_directory = ""
+        self.current_directory = []
         self.start_line_directory = 0
         self.selection = ""
         self.index = 0
@@ -220,7 +220,8 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
 
     # check positions and fix index accordingly
     if refresh:
-        SETTINGS.current_directory = ""
+        SETTINGS.current_directory = []
+        SETTINGS.start_line_directory = 0
 
     if position == "beginning":
         SETTINGS.start_line_directory = 0
@@ -254,7 +255,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
 
     # path directory
     uc.mvaddstr(
-        0, 0, "### pyleManager --- press i for instructions ###"[: SETTINGS.cols_length]
+        0, 0, "# pyleManager --- press i for instructions #"[: SETTINGS.cols_length]
     )
     # name folder
     name_folder = (
