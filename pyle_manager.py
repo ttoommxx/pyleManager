@@ -254,6 +254,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         # else print down 1
         SETTINGS.start_line_directory += 1
 
+    # print on screen
     uc.clear()
 
     # path directory
@@ -271,32 +272,32 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
 
     # folders and pointer
     if len(directory()) == 0:
-        uc.mvaddstr(2, 0, " **EMPTY FOLDER**")
+        uc.mvaddstr(2, 1, "**EMPTY FOLDER**")
         position = None
     else:
         SETTINGS.update_order(False)
         l_size = max((len(file_size(x)) for x in directory()))
 
         # write the description on top
-        header_files = [" v*NAME*" if SETTINGS.order == 0 else "  *NAME*"]
-        columns = []
         columns_count = 0
-        if SETTINGS.size and any(os.path.isfile(x) for x in directory()):
-            columns.append(" |v" if SETTINGS.order == 1 else " | ")
-            columns.append("*SIZE*")
-            columns.append(" " * (l_size - 6))
-            columns_count += 3 + l_size
-        if SETTINGS.time:
-            columns.append(" |v" if SETTINGS.order == 2 else " | ")
-            columns.append("*TIME MODIFIED*")
-            columns.append(" " * 4)
-            columns_count += 22
+        uc.mvaddstr(2, 1, "v*NAME*" if SETTINGS.order == 0 else " *NAME*")
         if SETTINGS.permission:
-            columns.append(" | *PERM*")
             columns_count += 9
-        header_files.append(" " * (SETTINGS.cols_length - columns_count - 8))
-        header_files.extend(columns)
-        uc.mvaddstr(2, 0, "".join(header_files))
+            uc.mvaddstr(2, SETTINGS.cols_length - columns_count + 1, ("| *PERM*"))
+        if SETTINGS.time:
+            columns_count += 22
+            uc.mvaddstr(
+                2,
+                SETTINGS.cols_length - columns_count + 1,
+                f"{'|v' if SETTINGS.order == 2 else '| '}*TIME MODIFIED*",
+            )
+        if SETTINGS.size and any(os.path.isfile(x) for x in directory()):
+            columns_count += 3 + l_size
+            uc.mvaddstr(
+                2,
+                SETTINGS.cols_length - columns_count + 1,
+                f"{'|v' if SETTINGS.order == 1 else '| '}*SIZE*",
+            )
 
         if position == "index":
             if len(directory()) - 1 < SETTINGS.index:
@@ -395,12 +396,12 @@ e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}"""
         if i < SETTINGS.rows_length - 1:
             uc.mvaddstr(i, 0, line)
         else:
-            uc.mvaddstr(SETTINGS.rows_length - 1, 0, " -press to continue-")
+            uc.mvaddstr(SETTINGS.rows_length - 1, 1, "-press to continue-")
             uc.getkey()
             uc.move(0, 0)
             uc.deleteln()
             uc.mvaddstr(SETTINGS.rows_length - 2, 0, line)
-    uc.mvaddstr(SETTINGS.rows_length - 1, 0, " -press to continue-")
+    uc.mvaddstr(SETTINGS.rows_length - 1, 1, "-press to continue-")
     uc.getkey()
 
 
