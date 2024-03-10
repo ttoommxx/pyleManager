@@ -275,7 +275,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         # write the description on top
         columns_count = 0
         uc.mvaddstr(2, 1, "v*NAME*" if SETTINGS.order == 0 else " *NAME*")
-        if SETTINGS.permission:
+        if SETTINGS.permission and SETTINGS.cols_length - columns_count - 9 + 1 >= 8:
             columns_count += 9
             uc.mvaddstr(2, SETTINGS.cols_length - columns_count + 1, ("| *PERM*"))
         if SETTINGS.time and SETTINGS.cols_length - columns_count - 22 + 1 >= 8:
@@ -317,7 +317,10 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
 
             # add extensions
             columns_count = 0
-            if SETTINGS.permission:
+            if (
+                SETTINGS.permission
+                and SETTINGS.cols_length - columns_count - 9 + 1 >= 8
+            ):
                 columns_count += 9
                 uc.mvaddstr(
                     3 + line_num,
@@ -413,6 +416,8 @@ def file_manager(picker=False) -> None:
 
     dir_printer(refresh=True, position="beginning")
 
+    output = None
+
     while True:
         SETTINGS.update_selection()
 
@@ -453,7 +458,6 @@ def file_manager(picker=False) -> None:
 
             # quit
             case "q":
-                output = None
                 break
 
             # refresh
@@ -554,6 +558,10 @@ def file_manager(picker=False) -> None:
                 dir_printer(position="selection")
 
             case "KEY_RESIZE":
+                if SETTINGS.rows_length < 3 or SETTINGS.cols_length < 8:
+                    uc.clear()
+                    uc.mvaddstr(0, 0, "RESIZE")
+                    uc.getkey()
                 dir_printer(position="selection")
 
             case _:
