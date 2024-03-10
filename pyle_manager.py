@@ -19,7 +19,8 @@ args = parser.parse_args()  # args.picker contains the modality
 
 # utility functions
 def slice_ij(v: list, i: int, j: int):
-    """create an iterator for a given array from i to j"""
+    """create a slice iterator from a list"""
+
     # notice that islice does not work this way, but consume the iterable from the beginning
     return (v[k] for k in range(i, min(len(v), j)))
 
@@ -214,11 +215,26 @@ def directory() -> list[str]:
     return SETTINGS.current_directory
 
 
-def dir_printer(position: str = "beginning") -> None:
+def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     """printing function"""
 
-    # first check if I only have to print the index:
-    if position == "up":
+    # check positions and fix index accordingly
+    if refresh:
+        SETTINGS.current_directory = ""
+
+    if position == "beginning":
+        SETTINGS.start_line_directory = 0
+        SETTINGS.index = 0
+
+    elif position == "selection":
+        SETTINGS.start_line_directory = 0
+        if SETTINGS.selection in directory():
+            SETTINGS.index = directory().index(SETTINGS.selection)
+        else:
+            SETTINGS.index = 0
+        position = "index"
+
+    elif position == "up":
         SETTINGS.index -= 1
         if SETTINGS.index >= SETTINGS.start_line_directory:
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory + 1, 0, " ")
@@ -356,28 +372,6 @@ def beeper() -> None:
         uc.beep()
 
 
-def dir_printer_reset(
-    refresh: bool = False, restore_position: str = "beginning"
-) -> None:
-    """print screen after resetting directory attributes"""
-    if refresh:
-        SETTINGS.current_directory = ""
-
-    SETTINGS.start_line_directory = 0
-    if restore_position == "index":
-        pass
-    elif restore_position == "selection":
-        if SETTINGS.selection in directory():
-            SETTINGS.index = directory().index(SETTINGS.selection)
-        else:
-            SETTINGS.index = 0
-        restore_position = "index"
-    else:
-        SETTINGS.index = 0
-
-    dir_printer(position=restore_position)
-
-
 def instructions() -> None:
     """print instructions"""
     uc.clear()
@@ -413,14 +407,14 @@ e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}"""
 # --------------------------------------------------
 
 
-def main(picker=False) -> None:
+def file_manager(picker=False) -> None:
     """file manager"""
 
     global SETTINGS
 
     SETTINGS = Settings(picker)
 
-    dir_printer_reset(refresh=True, restore_position="beginning")
+    dir_printer(refresh=True, position="beginning")
 
     while True:
         SETTINGS.update_selection()
@@ -448,7 +442,7 @@ def main(picker=False) -> None:
                     and os.access(SETTINGS.selection, os.R_OK)
                 ):
                     os.chdir(SETTINGS.selection)
-                    dir_printer_reset(refresh=True, restore_position="index")
+                    dir_printer(refresh=True, position="index")
                 else:
                     beeper()
 
@@ -456,7 +450,7 @@ def main(picker=False) -> None:
             case "KEY_LEFT":
                 if os.path.dirname(os.getcwd()) != os.getcwd():
                     os.chdir("..")
-                    dir_printer_reset(refresh=True, restore_position="index")
+                    dir_printer(refresh=True, position="index")
                 else:
                     beeper()
 
@@ -467,22 +461,22 @@ def main(picker=False) -> None:
 
             # refresh
             case "r":
-                dir_printer_reset(refresh=True, restore_position="selection")
+                dir_printer(refresh=True, position="selection")
 
             # toggle hidden
             case "h":
                 SETTINGS.change_hidden()
-                dir_printer_reset(refresh=True, restore_position="selection")
+                dir_printer(refresh=True, position="selection")
 
             # size
             case "d":
                 SETTINGS.change_size()
-                dir_printer_reset(restore_position="selection")
+                dir_printer(position="selection")
 
             # time
             case "t":
                 SETTINGS.change_time()
-                dir_printer_reset(restore_position="selection")
+                dir_printer(position="selection")
 
             # beep
             case "b":
@@ -491,12 +485,12 @@ def main(picker=False) -> None:
             # permission
             case "p":
                 SETTINGS.change_permission()
-                dir_printer_reset(restore_position="selection")
+                dir_printer(position="selection")
 
             # change order
             case "m":
                 SETTINGS.update_order(True)
-                dir_printer_reset(restore_position="selection")
+                dir_printer(position="selection")
 
             # enter
             case "^J":
@@ -523,7 +517,7 @@ def main(picker=False) -> None:
                                     "system not recognised, press any button to continue",
                                 )
                                 uc.getkey()
-                                dir_printer_reset(restore_position="selection")
+                                dir_printer(position="selection")
                 else:
                     beeper()
 
@@ -542,7 +536,7 @@ def main(picker=False) -> None:
                                 "Windows does not have any built-in command line editor, press any button to continue",
                             )
                             uc.getkey()
-                            dir_printer_reset(restore_position="selection")
+                            dir_printer(position="selection")
                         case "Darwin":
                             os.system(f'open -e "{selection_os}"')
                         case _:
@@ -553,17 +547,17 @@ def main(picker=False) -> None:
                                 "system not recognised, press any button to continue",
                             )
                             uc.getkey()
-                            dir_printer_reset(restore_position="selection")
+                            dir_printer(position="selection")
                 else:
                     beeper()
 
             # instructions
             case "i":
                 instructions()
-                dir_printer_reset(restore_position="selection")
+                dir_printer(position="selection")
 
             case "KEY_RESIZE":
-                dir_printer_reset(restore_position="selection")
+                dir_printer(position="selection")
 
             case _:
                 pass
@@ -574,4 +568,4 @@ def main(picker=False) -> None:
 
 
 if __name__ == "__main__":
-    main(args.picker)
+    file_manager(args.picker)
