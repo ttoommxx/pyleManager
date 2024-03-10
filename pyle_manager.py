@@ -225,7 +225,6 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     if position == "beginning":
         SETTINGS.start_line_directory = 0
         SETTINGS.index = 0
-
     elif position == "selection":
         SETTINGS.start_line_directory = 0
         if SETTINGS.selection in directory():
@@ -233,24 +232,20 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         else:
             SETTINGS.index = 0
         position = "index"
-
     elif position == "up":
         SETTINGS.index -= 1
         if SETTINGS.index >= SETTINGS.start_line_directory:
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory + 1, 0, " ")
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory, 0, "-")
             return  # exit the function
-
         # else print up one
         SETTINGS.start_line_directory -= 1
-
     elif position == "down":
         SETTINGS.index += 1
         if SETTINGS.index < SETTINGS.rows_length - 3 + SETTINGS.start_line_directory:
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory - 1, 0, " ")
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory, 0, "-")
             return  # exit the function
-
         # else print down 1
         SETTINGS.start_line_directory += 1
 
@@ -261,7 +256,6 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     uc.mvaddstr(
         0, 0, "### pyleManager --- press i for instructions ###"[: SETTINGS.cols_length]
     )
-
     # name folder
     name_folder = (
         "... " if len(os.path.abspath(os.getcwd())) > SETTINGS.cols_length else ""
@@ -314,50 +308,45 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
                 SETTINGS.start_line_directory + SETTINGS.rows_length - 3,
             )
         ):
-            line_print = [" <" if os.path.isdir(x) else "  "]
+            if os.path.isdir(x):
+                uc.mvaddch(3 + line_num, 1, "<")
 
             # add extensions
-            columns = []
             columns_count = 0
-            if SETTINGS.size and os.path.isfile(x):
-                columns.append(" | ")
-                columns.append(file_size(x))
-                columns.append(" " * (l_size - len(file_size(x))))
-                columns_count += 3 + l_size
+            if SETTINGS.permission:
+                columns_count += 9
+                per_r = "r" if os.access(x, os.R_OK) else "-"
+                per_w = "w" if os.access(x, os.W_OK) else "-"
+                per_x = "x" if os.access(x, os.X_OK) else "-"
+                uc.mvaddstr(
+                    3 + line_num,
+                    SETTINGS.cols_length - columns_count + 1,
+                    f"| {per_r} {per_w} {per_x}",
+                )
             if SETTINGS.time:
-                columns.append(" | ")
-                columns.append(
-                    time.strftime(
+                columns_count += 22
+                uc.mvaddstr(
+                    3 + line_num,
+                    SETTINGS.cols_length - columns_count + 1,
+                    f"| {time.strftime(
                         "%Y-%m-%d %H:%M:%S",
                         time.strptime(time.ctime(os.lstat(x).st_mtime)),
-                    )
+                    )}",
                 )
-                columns_count += 22
-
-            if SETTINGS.permission:
-                columns.append(" | ")
-                columns.append(
-                    "r " if os.access(x, os.R_OK) else "- "
-                )  # read permission
-                columns.append(
-                    "w " if os.access(x, os.W_OK) else "- "
-                )  # write permission
-                columns.append("x " if os.access(x, os.X_OK) else "- ")
-                columns_count += 9
-
+            if SETTINGS.size and os.path.isfile(x):
+                columns_count += 3 + l_size
+                uc.mvaddstr(
+                    3 + line_num,
+                    SETTINGS.cols_length - columns_count + 1,
+                    f"| {file_size(x)}",
+                )
             name_x = (
                 f"... {x[-(SETTINGS.cols_length - 6 - columns_count):]
                             }"
                 if len(x) > SETTINGS.cols_length - 2 - columns_count
                 else x
             )
-            line_print.append(name_x)
-            line_print.append(
-                " " * (SETTINGS.cols_length - len(name_x) - columns_count - 2)
-            )
-            line_print.extend(columns)
-
-            uc.mvaddstr(3 + line_num, 0, "".join(line_print))
+            uc.mvaddstr(3 + line_num, 2, name_x)
 
     if position == "beginning" or position == "up":
         uc.mvaddch(3, 0, "-")
