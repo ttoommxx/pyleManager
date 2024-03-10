@@ -278,14 +278,18 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         if SETTINGS.permission:
             columns_count += 9
             uc.mvaddstr(2, SETTINGS.cols_length - columns_count + 1, ("| *PERM*"))
-        if SETTINGS.time:
+        if SETTINGS.time and SETTINGS.cols_length - columns_count - 22 + 1 >= 8:
             columns_count += 22
             uc.mvaddstr(
                 2,
                 SETTINGS.cols_length - columns_count + 1,
                 ("|v" if SETTINGS.order == 2 else "| ") + "*TIME MODIFIED*",
             )
-        if SETTINGS.size and any(os.path.isfile(x) for x in directory()):
+        if (
+            SETTINGS.size
+            and any(os.path.isfile(x) for x in directory())
+            and SETTINGS.cols_length - columns_count - 3 - l_size + 1 >= 8
+        ):
             columns_count += 3 + l_size
             uc.mvaddstr(
                 2,
@@ -323,7 +327,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
                     + ("w " if os.access(x, os.W_OK) else "- ")
                     + ("x" if os.access(x, os.X_OK) else "-"),
                 )
-            if SETTINGS.time:
+            if SETTINGS.time and SETTINGS.cols_length - columns_count - 22 + 1 >= 8:
                 columns_count += 22
                 uc.mvaddstr(
                     3 + line_num,
@@ -334,18 +338,21 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
                         time.strptime(time.ctime(os.lstat(x).st_mtime)),
                     ),
                 )
-            if SETTINGS.size and os.path.isfile(x):
+            if (
+                SETTINGS.size
+                and os.path.isfile(x)
+                and SETTINGS.cols_length - columns_count - 3 - l_size + 1 >= 8
+            ):
                 columns_count += 3 + l_size
                 uc.mvaddstr(
                     3 + line_num,
                     SETTINGS.cols_length - columns_count + 1,
                     "| " + file_size(x),
                 )
-            name_x = (
-                "... " + x[-(SETTINGS.cols_length - 6 - columns_count) :]
-                if len(x) > SETTINGS.cols_length - 2 - columns_count
-                else x
-            )
+            if len(x) > SETTINGS.cols_length - 2 - columns_count:
+                name_x = "... " + x[-(SETTINGS.cols_length - 6 - columns_count) :]
+            else:
+                name_x = x
             uc.mvaddstr(3 + line_num, 2, name_x)
 
     if position == "beginning" or position == "up":
