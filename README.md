@@ -6,7 +6,7 @@ A very simple file manager for the terminal written in Python.
 
 Requires Python >= 3.10 and unicurses
 ```
-pip install uni-curses.
+pip install uni-curses
 ```
 Run via
 ```
