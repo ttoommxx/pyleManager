@@ -283,14 +283,14 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
             uc.mvaddstr(
                 2,
                 SETTINGS.cols_length - columns_count + 1,
-                f"{'|v' if SETTINGS.order == 2 else '| '}*TIME MODIFIED*",
+                ("|v" if SETTINGS.order == 2 else "| ") + "*TIME MODIFIED*",
             )
         if SETTINGS.size and any(os.path.isfile(x) for x in directory()):
             columns_count += 3 + l_size
             uc.mvaddstr(
                 2,
                 SETTINGS.cols_length - columns_count + 1,
-                f"{'|v' if SETTINGS.order == 1 else '| '}*SIZE*",
+                ("|v" if SETTINGS.order == 1 else "| ") + "*SIZE*",
             )
 
         if position == "index":
@@ -315,34 +315,34 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
             columns_count = 0
             if SETTINGS.permission:
                 columns_count += 9
-                per_r = "r" if os.access(x, os.R_OK) else "-"
-                per_w = "w" if os.access(x, os.W_OK) else "-"
-                per_x = "x" if os.access(x, os.X_OK) else "-"
                 uc.mvaddstr(
                     3 + line_num,
                     SETTINGS.cols_length - columns_count + 1,
-                    f"| {per_r} {per_w} {per_x}",
+                    "| "
+                    + ("r " if os.access(x, os.R_OK) else "- ")
+                    + ("w " if os.access(x, os.W_OK) else "- ")
+                    + ("x" if os.access(x, os.X_OK) else "-"),
                 )
             if SETTINGS.time:
                 columns_count += 22
                 uc.mvaddstr(
                     3 + line_num,
                     SETTINGS.cols_length - columns_count + 1,
-                    f"| {time.strftime(
+                    "| "
+                    + time.strftime(
                         "%Y-%m-%d %H:%M:%S",
                         time.strptime(time.ctime(os.lstat(x).st_mtime)),
-                    )}",
+                    ),
                 )
             if SETTINGS.size and os.path.isfile(x):
                 columns_count += 3 + l_size
                 uc.mvaddstr(
                     3 + line_num,
                     SETTINGS.cols_length - columns_count + 1,
-                    f"| {file_size(x)}",
+                    "| " + file_size(x),
                 )
             name_x = (
-                f"... {x[-(SETTINGS.cols_length - 6 - columns_count):]
-                            }"
+                "... " + x[-(SETTINGS.cols_length - 6 - columns_count) :]
                 if len(x) > SETTINGS.cols_length - 2 - columns_count
                 else x
             )
