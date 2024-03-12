@@ -236,16 +236,16 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     elif position == "up":
         SETTINGS.index -= 1
         if SETTINGS.index >= SETTINGS.start_line_directory:
-            uc.mvaddwstr(3 + SETTINGS.index - SETTINGS.start_line_directory + 1, 0, " ")
-            uc.mvaddwstr(3 + SETTINGS.index - SETTINGS.start_line_directory, 0, "-")
+            uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory + 1, 0, " ")
+            uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory, 0, "-")
             return  # exit the function
         # else print up one
         SETTINGS.start_line_directory -= 1
     elif position == "down":
         SETTINGS.index += 1
         if SETTINGS.index < SETTINGS.rows_length - 3 + SETTINGS.start_line_directory:
-            uc.mvaddwstr(3 + SETTINGS.index - SETTINGS.start_line_directory - 1, 0, " ")
-            uc.mvaddwstr(3 + SETTINGS.index - SETTINGS.start_line_directory, 0, "-")
+            uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory - 1, 0, " ")
+            uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory, 0, "-")
             return  # exit the function
         # else print down 1
         SETTINGS.start_line_directory += 1
@@ -254,7 +254,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     uc.clear()
 
     # path directory
-    uc.mvaddwstr(
+    uc.mvaddstr(
         0, 0, "# pyleManager --- press i for instructions #"[: SETTINGS.cols_length]
     )
     # name folder
@@ -267,7 +267,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
 
     # folders and pointer
     if len(directory()) == 0:
-        uc.mvaddwstr(2, 1, "**EMPTY FOLDER**")
+        uc.mvaddstr(2, 1, "**EMPTY FOLDER**")
         position = None
     else:
         SETTINGS.update_order(False)
@@ -275,13 +275,13 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
 
         # write the description on top
         columns_count = 0
-        uc.mvaddwstr(2, 1, "v*NAME*" if SETTINGS.order == 0 else " *NAME*")
+        uc.mvaddstr(2, 1, "v*NAME*" if SETTINGS.order == 0 else " *NAME*")
         if SETTINGS.permission and SETTINGS.cols_length - columns_count - 9 + 1 >= 8:
             columns_count += 9
-            uc.mvaddwstr(2, SETTINGS.cols_length - columns_count + 1, ("| *PERM*"))
+            uc.mvaddstr(2, SETTINGS.cols_length - columns_count + 1, ("| *PERM*"))
         if SETTINGS.time and SETTINGS.cols_length - columns_count - 22 + 1 >= 8:
             columns_count += 22
-            uc.mvaddwstr(
+            uc.mvaddstr(
                 2,
                 SETTINGS.cols_length - columns_count + 1,
                 ("|v" if SETTINGS.order == 2 else "| ") + "*TIME MODIFIED*",
@@ -292,7 +292,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
             and SETTINGS.cols_length - columns_count - 3 - l_size + 1 >= 8
         ):
             columns_count += 3 + l_size
-            uc.mvaddwstr(
+            uc.mvaddstr(
                 2,
                 SETTINGS.cols_length - columns_count + 1,
                 ("|v" if SETTINGS.order == 1 else "| ") + "*SIZE*",
@@ -314,7 +314,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
             )
         ):
             if os.path.isdir(x):
-                uc.mvaddwstr(3 + line_num, 1, "<")
+                uc.mvaddch(3 + line_num, 1, "<")
 
             # add extensions
             columns_count = 0
@@ -323,7 +323,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
                 and SETTINGS.cols_length - columns_count - 9 + 1 >= 8
             ):
                 columns_count += 9
-                uc.mvaddwstr(
+                uc.mvaddstr(
                     3 + line_num,
                     SETTINGS.cols_length - columns_count + 1,
                     "| "
@@ -333,7 +333,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
                 )
             if SETTINGS.time and SETTINGS.cols_length - columns_count - 22 + 1 >= 8:
                 columns_count += 22
-                uc.mvaddwstr(
+                uc.mvaddstr(
                     3 + line_num,
                     SETTINGS.cols_length - columns_count + 1,
                     "| "
@@ -348,7 +348,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
                 and SETTINGS.cols_length - columns_count - 3 - l_size + 1 >= 8
             ):
                 columns_count += 3 + l_size
-                uc.mvaddwstr(
+                uc.mvaddstr(
                     3 + line_num,
                     SETTINGS.cols_length - columns_count + 1,
                     "| " + file_size(x),
@@ -360,11 +360,11 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
             uc.mvaddwstr(3 + line_num, 2, name_x)
 
     if position == "beginning" or position == "up":
-        uc.mvaddwstr(3, 0, "-")
+        uc.mvaddch(3, 0, "-")
     elif position == "index":
-        uc.mvaddwstr(SETTINGS.index - SETTINGS.start_line_directory + 3, 0, "-")
+        uc.mvaddch(SETTINGS.index - SETTINGS.start_line_directory + 3, 0, "-")
     elif position == "down":
-        uc.mvaddwstr(SETTINGS.rows_length - 1, 0, "-")
+        uc.mvaddch(SETTINGS.rows_length - 1, 0, "-")
 
 
 def beeper() -> None:
@@ -394,14 +394,14 @@ enter = {'select file' if SETTINGS.picker else 'open using the default applicati
 e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}"""
     for i, line in enumerate(string.splitlines()):
         if i < SETTINGS.rows_length - 1:
-            uc.mvaddwstr(i, 0, line)
+            uc.mvaddstr(i, 0, line)
         else:
-            uc.mvaddwstr(SETTINGS.rows_length - 1, 1, "-press to continue-")
+            uc.mvaddstr(SETTINGS.rows_length - 1, 1, "-press to continue-")
             uc.getkey()
             uc.move(0, 0)
             uc.deleteln()
-            uc.mvaddwstr(SETTINGS.rows_length - 2, 0, line)
-    uc.mvaddwstr(SETTINGS.rows_length - 1, 1, "-press to continue-")
+            uc.mvaddstr(SETTINGS.rows_length - 2, 0, line)
+    uc.mvaddstr(SETTINGS.rows_length - 1, 1, "-press to continue-")
     uc.getkey()
 
 
@@ -513,10 +513,10 @@ def file_manager(picker=False) -> None:
                                 os.system(f'open "{selection_os}"')
                             case _:
                                 uc.clear()
-                                uc.mvaddwstr(
+                                uc.mvaddstr(
                                     0,
                                     0,
-                                    "system not recognised, press any button to continue",
+                                    "System not recognised, press any button to continue",
                                 )
                                 uc.getkey()
                                 dir_printer(position="selection")
@@ -532,7 +532,7 @@ def file_manager(picker=False) -> None:
                             os.system(f'$EDITOR "{selection_os}"')
                         case "Windows":
                             uc.clear()
-                            uc.mvaddwstr(
+                            uc.mvaddstr(
                                 0,
                                 0,
                                 "Windows does not have any built-in command line editor, press any button to continue",
@@ -543,10 +543,10 @@ def file_manager(picker=False) -> None:
                             os.system(f'open -e "{selection_os}"')
                         case _:
                             uc.clear()
-                            uc.mvaddwstr(
+                            uc.mvaddstr(
                                 0,
                                 0,
-                                "system not recognised, press any button to continue",
+                                "System not recognised, press any button to continue",
                             )
                             uc.getkey()
                             dir_printer(position="selection")
@@ -561,7 +561,7 @@ def file_manager(picker=False) -> None:
             case "KEY_RESIZE":
                 if SETTINGS.rows_length < 3 or SETTINGS.cols_length < 8:
                     uc.clear()
-                    uc.mvaddwstr(0, 0, "RESIZE")
+                    uc.mvaddstr(0, 0, "RESIZE")
                     uc.getkey()
                 dir_printer(position="selection")
 
