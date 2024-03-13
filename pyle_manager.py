@@ -40,6 +40,8 @@ class Settings:
         self.start_line_directory = 0
         self.selection = ""
         self.index = 0
+
+        # immutables
         self.file_size_vars = ("b", "kb", "mb", "gb")
 
         # init variables
