@@ -29,7 +29,7 @@ def slice_ij(v: list, i: int, j: int):
 class Settings:
     """class containing the global settings"""
 
-    def __init__(self, picker) -> None:
+    def __init__(self) -> None:
         self.size = False
         self.time = False
         self.hidden = False
@@ -40,10 +40,29 @@ class Settings:
         self.start_line_directory = 0
         self.selection = ""
         self.index = 0
-        self.picker = picker
         self.file_size_vars = ("b", "kb", "mb", "gb")
 
         # init variables
+        self.picker = False
+        self.local_folder = ""
+        self.stdscr = -1
+
+    def init(self, picker) -> None:
+        """initialise settings to the current session"""
+
+        self.size = False
+        self.time = False
+        self.hidden = False
+        self.beep = False
+        self.permission = False
+        self.order = 0
+        self.current_directory = []
+        self.start_line_directory = 0
+        self.selection = ""
+        self.index = 0
+
+        # init variables
+        self.picker = picker
         self.local_folder = os.path.abspath(os.getcwd())
         self.stdscr = uc.initscr()
         uc.cbreak()
@@ -121,7 +140,7 @@ class Settings:
         uc.endwin()
 
 
-SETTINGS = None
+SETTINGS = Settings()
 
 # --------------------------------------------------
 
@@ -411,9 +430,7 @@ e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}"""
 def file_manager(picker=False) -> None:
     """file manager"""
 
-    global SETTINGS
-
-    SETTINGS = Settings(picker)
+    SETTINGS.init(picker)
 
     dir_printer(refresh=True, position="beginning")
 
