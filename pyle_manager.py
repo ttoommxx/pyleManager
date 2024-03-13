@@ -50,12 +50,6 @@ class Settings:
     def init(self, picker) -> None:
         """initialise settings to the current session"""
 
-        self.size = False
-        self.time = False
-        self.hidden = False
-        self.beep = False
-        self.permission = False
-        self.order = 0
         self.current_directory = []
         self.start_line_directory = 0
         self.selection = ""
