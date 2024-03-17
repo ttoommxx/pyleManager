@@ -65,6 +65,7 @@ class Settings:
         uc.noecho()
         uc.keypad(self.stdscr, True)
         uc.curs_set(0)
+        # uc.leaveok(self.stdscr, True)
 
     @property
     def rows_length(self) -> int:
@@ -254,6 +255,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory + 1, 0, " ")
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory, 0, "-")
             return  # exit the function
+
         # else print up one
         SETTINGS.start_line_directory -= 1
     elif position == "down":
@@ -262,6 +264,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory - 1, 0, " ")
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory, 0, "-")
             return  # exit the function
+
         # else print down 1
         SETTINGS.start_line_directory += 1
 
