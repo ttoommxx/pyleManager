@@ -3,6 +3,7 @@
 import os
 import time
 import argparse
+import ctypes
 from itertools import chain
 from platform import system
 import unicurses as uc
@@ -47,7 +48,7 @@ class Settings:
         # init variables
         self.picker = False
         self.local_folder = ""
-        self.stdscr = -1
+        self.stdscr: ctypes.c_void_p
 
     def init(self, picker: bool) -> None:
         """initialise settings to the current session"""
@@ -150,8 +151,8 @@ def file_size(path: str) -> str:
         i -= 1
     if i > 3:
         i = 3
-    size /= 1000**i
-    return f"{size:.2f}{SETTINGS.file_size_vars[i]}"
+    display_size = size / 1000**i
+    return f"{display_size:.2f}{SETTINGS.file_size_vars[i]}"
 
 
 def directory() -> list[str]:
