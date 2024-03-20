@@ -426,7 +426,7 @@ e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}"""
 # --------------------------------------------------
 
 
-def file_manager(picker=False) -> str:
+def file_manager(picker: bool = False) -> str:
     """file manager"""
 
     SETTINGS.init(picker)
