@@ -8,23 +8,6 @@ from itertools import chain
 from platform import system
 import unicurses as uc
 
-# parsing args
-parser = argparse.ArgumentParser(
-    prog="pyleManager", description="file manager written in Python"
-)
-parser.add_argument(
-    "-p", "--picker", action="store_true", help="use pyleManager as a file selector"
-)
-args = parser.parse_args()  # args.picker contains the modality
-
-
-# utility functions
-def slice_ij(v: list, i: int, j: int):
-    """create a slice iterator from a list"""
-
-    # notice that islice does not work this way, but consume the iterable from the beginning
-    return (v[k] for k in range(i, min(len(v), j)))
-
 
 # mutable settings
 class Settings:
@@ -325,13 +308,16 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
                     SETTINGS.index - (SETTINGS.rows_length - 3) + 1
                 )
 
-        for line_num, x in enumerate(
-            slice_ij(
-                directory(),
+        for line_num, k in enumerate(
+            range(
                 SETTINGS.start_line_directory,
-                SETTINGS.start_line_directory + SETTINGS.rows_length - 3,
+                min(
+                    len(directory()),
+                    SETTINGS.start_line_directory + SETTINGS.rows_length - 3,
+                ),
             )
         ):
+            x = directory()[k]
             if os.path.isdir(x):
                 uc.mvaddch(3 + line_num, 1, "<")
 
@@ -591,4 +577,13 @@ def file_manager(picker: bool = False) -> str:
 
 
 if __name__ == "__main__":
+    # parsing args
+    parser = argparse.ArgumentParser(
+        prog="pyleManager", description="file manager written in Python"
+    )
+    parser.add_argument(
+        "-p", "--picker", action="store_true", help="use pyleManager as a file selector"
+    )
+    args = parser.parse_args()  # args.picker contains the modality
+
     file_manager(args.picker)
