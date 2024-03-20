@@ -36,7 +36,7 @@ class Settings:
         self.beep = False
         self.permission = False
         self.order = 0
-        self.current_directory = []
+        self.current_directory: list[str] = []
         self.start_line_directory = 0
         self.selection = ""
         self.index = 0
@@ -49,7 +49,7 @@ class Settings:
         self.local_folder = ""
         self.stdscr = -1
 
-    def init(self, picker) -> None:
+    def init(self, picker: bool) -> None:
         """initialise settings to the current session"""
 
         self.current_directory = []
@@ -122,7 +122,7 @@ class Settings:
         )
         if self.order != old_order:
             # only update if the previous order was changed
-            self.current_directory = ""
+            self.current_directory = []
 
     def update_selection(self) -> None:
         """update the name of the selected folder"""
@@ -286,7 +286,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     # folders and pointer
     if len(directory()) == 0:
         uc.mvaddstr(2, 1, "**EMPTY FOLDER**")
-        position = None
+        position = ""
     else:
         SETTINGS.update_order(False)
         l_size = max((len(file_size(x)) for x in directory()))
@@ -426,14 +426,14 @@ e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}"""
 # --------------------------------------------------
 
 
-def file_manager(picker=False) -> None:
+def file_manager(picker=False) -> str:
     """file manager"""
 
     SETTINGS.init(picker)
 
     dir_printer(refresh=True, position="beginning")
 
-    output = None
+    output = ""
 
     while True:
         SETTINGS.update_selection()
