@@ -14,28 +14,32 @@ class Settings:
     """class containing the global settings"""
 
     def __init__(self) -> None:
+        # immutables
+        self.file_size_vars = ("b", "kb", "mb", "gb")
+
+        # mutable
         self.size = False
         self.time = False
         self.hidden = False
         self.beep = False
         self.permission = False
         self.order = 0
-        self.current_directory: list[str] = []
-        self.start_line_directory = 0
-        self.selection = ""
-        self.index = 0
 
-        # immutables
-        self.file_size_vars = ("b", "kb", "mb", "gb")
+        # reset at each execution
+        self.current_directory: list[str]
+        self.start_line_directory: int
+        self.selection: str
+        self.index: int
 
         # init variables
-        self.picker = False
-        self.local_folder = ""
+        self.picker: bool
+        self.local_folder: str
         self.stdscr: ctypes.c_void_p
 
-    def init(self, picker: bool) -> None:
+    def init(self, picker: bool, stdscr: ctypes.c_void_p) -> None:
         """initialise settings to the current session"""
 
+        # reset at each different execution
         self.current_directory = []
         self.start_line_directory = 0
         self.selection = ""
@@ -44,12 +48,12 @@ class Settings:
         # init variables
         self.picker = picker
         self.local_folder = os.path.abspath(os.getcwd())
-        self.stdscr = uc.initscr()
+        self.stdscr = stdscr
         uc.cbreak()
         uc.noecho()
-        uc.keypad(self.stdscr, True)
+        uc.keypad(stdscr, True)
         uc.curs_set(0)
-        # uc.leaveok(self.stdscr, True)
+        uc.leaveok(stdscr, True)
 
     @property
     def rows_length(self) -> int:
@@ -95,7 +99,7 @@ class Settings:
         # create a vector with (1,a,b) where a,b are one if dimension and TIME_MODIFIED are enabled
         settings_enabled = (
             1,
-            self.size * any(os.path.isfile(x) for x in directory()),
+            self.size * any(os.path.isfile(x) for x in _directory()),
             self.time,
         )
         # search the next 1 and if not found return 0
@@ -111,8 +115,8 @@ class Settings:
     def update_selection(self) -> None:
         """update the name of the selected folder"""
 
-        if len(directory()) > 0:
-            self.selection = directory()[self.index]
+        if len(_directory()) > 0:
+            self.selection = _directory()[self.index]
 
     def quit(self) -> None:
         """quitting routines"""
@@ -126,7 +130,7 @@ SETTINGS = Settings()
 # --------------------------------------------------
 
 
-def file_size(path: str) -> str:
+def _file_size(path: str) -> str:
     """return file size as a formatted string"""
     size = os.lstat(path).st_size
     i = len(str(size)) // 3
@@ -138,7 +142,7 @@ def file_size(path: str) -> str:
     return f"{display_size:.2f}{SETTINGS.file_size_vars[i]}"
 
 
-def directory() -> list[str]:
+def _directory() -> list[str]:
     """list of folders and files"""
     # return the previous value if exists
     if not SETTINGS.current_directory:
@@ -215,7 +219,7 @@ def directory() -> list[str]:
     return SETTINGS.current_directory
 
 
-def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
+def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     """printing function"""
 
     # check positions and fix index accordingly
@@ -228,8 +232,8 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         SETTINGS.index = 0
     elif position == "selection":
         SETTINGS.start_line_directory = 0
-        if SETTINGS.selection in directory():
-            SETTINGS.index = directory().index(SETTINGS.selection)
+        if SETTINGS.selection in _directory():
+            SETTINGS.index = _directory().index(SETTINGS.selection)
         else:
             SETTINGS.index = 0
         position = "index"
@@ -268,12 +272,12 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     uc.mvaddwstr(1, 0, name_folder)
 
     # folders and pointer
-    if len(directory()) == 0:
+    if len(_directory()) == 0:
         uc.mvaddstr(2, 1, "**EMPTY FOLDER**")
         position = ""
     else:
         SETTINGS.update_order(False)
-        l_size = max((len(file_size(x)) for x in directory()))
+        l_size = max((len(_file_size(x)) for x in _directory()))
 
         # write the description on top
         columns_count = 0
@@ -290,7 +294,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
             )
         if (
             SETTINGS.size
-            and any(os.path.isfile(x) for x in directory())
+            and any(os.path.isfile(x) for x in _directory())
             and SETTINGS.cols_length - columns_count - 3 - l_size + 1 >= 8
         ):
             columns_count += 3 + l_size
@@ -301,8 +305,8 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
             )
 
         if position == "index":
-            if len(directory()) - 1 < SETTINGS.index:
-                SETTINGS.index = len(directory()) - 1
+            if len(_directory()) - 1 < SETTINGS.index:
+                SETTINGS.index = len(_directory()) - 1
             if SETTINGS.index >= SETTINGS.rows_length - 3:
                 SETTINGS.start_line_directory = (
                     SETTINGS.index - (SETTINGS.rows_length - 3) + 1
@@ -312,12 +316,12 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
             range(
                 SETTINGS.start_line_directory,
                 min(
-                    len(directory()),
+                    len(_directory()),
                     SETTINGS.start_line_directory + SETTINGS.rows_length - 3,
                 ),
             )
         ):
-            x = directory()[k]
+            x = _directory()[k]
             if os.path.isdir(x):
                 uc.mvaddch(3 + line_num, 1, "<")
 
@@ -356,7 +360,7 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
                 uc.mvaddstr(
                     3 + line_num,
                     SETTINGS.cols_length - columns_count + 1,
-                    "| " + file_size(x),
+                    "| " + _file_size(x),
                 )
             if len(x) > SETTINGS.cols_length - 2 - columns_count:
                 name_x = "... " + x[-(SETTINGS.cols_length - 6 - columns_count) :]
@@ -372,13 +376,13 @@ def dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         uc.mvaddch(SETTINGS.rows_length - 1, 0, "-")
 
 
-def beeper() -> None:
+def _beeper() -> None:
     """make a beep"""
     if SETTINGS.beep:
         uc.beep()
 
 
-def instructions() -> None:
+def _instructions() -> None:
     """print instructions"""
     uc.clear()
 
@@ -413,52 +417,52 @@ e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}"""
 # --------------------------------------------------
 
 
-def file_manager(picker: bool = False) -> str:
-    """file manager"""
+def _file_manager(stdscr: ctypes.c_void_p, picker: bool) -> str:
+    """file manager, wrapped by unicurses"""
 
-    SETTINGS.init(picker)
+    SETTINGS.init(picker, stdscr)
 
-    dir_printer(refresh=True, position="beginning")
+    _dir_printer(refresh=True, position="beginning")
 
     output = ""
 
     while True:
         SETTINGS.update_selection()
 
-        match str(uc.getkey(), "utf-8"):
+        match uc.getkey():
             # up
             case "KEY_UP":
-                if len(directory()) > 0 and SETTINGS.index > 0:
-                    dir_printer(position="up")
+                if len(_directory()) > 0 and SETTINGS.index > 0:
+                    _dir_printer(position="up")
                 else:
-                    beeper()
+                    _beeper()
 
             # down
             case "KEY_DOWN":
-                if len(directory()) > 0 and SETTINGS.index < len(directory()) - 1:
-                    dir_printer(position="down")
+                if len(_directory()) > 0 and SETTINGS.index < len(_directory()) - 1:
+                    _dir_printer(position="down")
                 else:
-                    beeper()
+                    _beeper()
 
             # right
             case "KEY_RIGHT":
                 if (
-                    len(directory()) > 0
+                    len(_directory()) > 0
                     and os.path.isdir(SETTINGS.selection)
                     and os.access(SETTINGS.selection, os.R_OK)
                 ):
                     os.chdir(SETTINGS.selection)
-                    dir_printer(refresh=True, position="index")
+                    _dir_printer(refresh=True, position="index")
                 else:
-                    beeper()
+                    _beeper()
 
             # left
             case "KEY_LEFT":
                 if os.path.dirname(os.getcwd()) != os.getcwd():
                     os.chdir("..")
-                    dir_printer(refresh=True, position="index")
+                    _dir_printer(refresh=True, position="index")
                 else:
-                    beeper()
+                    _beeper()
 
             # quit
             case "q":
@@ -466,22 +470,22 @@ def file_manager(picker: bool = False) -> str:
 
             # refresh
             case "r":
-                dir_printer(refresh=True, position="selection")
+                _dir_printer(refresh=True, position="selection")
 
             # toggle hidden
             case "h":
                 SETTINGS.change_hidden()
-                dir_printer(refresh=True, position="selection")
+                _dir_printer(refresh=True, position="selection")
 
             # size
             case "d":
                 SETTINGS.change_size()
-                dir_printer(position="selection")
+                _dir_printer(position="selection")
 
             # time
             case "t":
                 SETTINGS.change_time()
-                dir_printer(position="selection")
+                _dir_printer(position="selection")
 
             # beep
             case "b":
@@ -490,16 +494,16 @@ def file_manager(picker: bool = False) -> str:
             # permission
             case "p":
                 SETTINGS.change_permission()
-                dir_printer(position="selection")
+                _dir_printer(position="selection")
 
             # change order
             case "m":
                 SETTINGS.update_order(True)
-                dir_printer(position="selection")
+                _dir_printer(position="selection")
 
             # enter
             case "^J":
-                if len(directory()) > 0:
+                if len(_directory()) > 0:
                     if SETTINGS.picker:
                         path = os.path.join(os.getcwd(), SETTINGS.selection)
                         output = path
@@ -522,13 +526,13 @@ def file_manager(picker: bool = False) -> str:
                                     "System not recognised, press any button to continue",
                                 )
                                 uc.getkey()
-                                dir_printer(position="selection")
+                                _dir_printer(position="selection")
                 else:
-                    beeper()
+                    _beeper()
 
             # command-line editor
             case "e":
-                if len(directory()) > 0 and not SETTINGS.picker:
+                if len(_directory()) > 0 and not SETTINGS.picker:
                     selection_os = SETTINGS.selection.replace('"', '\\"')
                     match system():
                         case "Linux":
@@ -541,7 +545,7 @@ def file_manager(picker: bool = False) -> str:
                                 "Windows does not have any built-in command line editor, press any button to continue",
                             )
                             uc.getkey()
-                            dir_printer(position="selection")
+                            _dir_printer(position="selection")
                         case "Darwin":
                             os.system(f'open -e "{selection_os}"')
                         case _:
@@ -552,21 +556,21 @@ def file_manager(picker: bool = False) -> str:
                                 "System not recognised, press any button to continue",
                             )
                             uc.getkey()
-                            dir_printer(position="selection")
+                            _dir_printer(position="selection")
                 else:
-                    beeper()
+                    _beeper()
 
             # instructions
             case "i":
-                instructions()
-                dir_printer(position="selection")
+                _instructions()
+                _dir_printer(position="selection")
 
             case "KEY_RESIZE":
                 if SETTINGS.rows_length < 3 or SETTINGS.cols_length < 8:
                     uc.clear()
                     uc.mvaddstr(0, 0, "RESIZE")
                     uc.getkey()
-                dir_printer(position="selection")
+                _dir_printer(position="selection")
 
             case _:
                 pass
@@ -574,6 +578,12 @@ def file_manager(picker: bool = False) -> str:
     SETTINGS.quit()
 
     return output
+
+
+def file_manager(picker: bool = False):
+    """file manager"""
+    
+    uc.wrapper(_file_manager, picker)
 
 
 if __name__ == "__main__":
