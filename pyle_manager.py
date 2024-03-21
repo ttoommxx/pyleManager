@@ -219,6 +219,52 @@ def _directory() -> list[str]:
     return SETTINGS.current_directory
 
 
+def _print_line(line_num: int, k: int, l_size: int) -> None:
+    x = _directory()[k]
+    if os.path.isdir(x):
+        uc.mvaddch(3 + line_num, 1, "<")
+
+    # add extensions
+    columns_count = 0
+    if SETTINGS.permission and SETTINGS.cols_length - columns_count - 9 + 1 >= 8:
+        columns_count += 9
+        uc.mvaddstr(
+            3 + line_num,
+            SETTINGS.cols_length - columns_count + 1,
+            "| "
+            + ("r " if os.access(x, os.R_OK) else "- ")
+            + ("w " if os.access(x, os.W_OK) else "- ")
+            + ("x" if os.access(x, os.X_OK) else "-"),
+        )
+    if SETTINGS.time and SETTINGS.cols_length - columns_count - 22 + 1 >= 8:
+        columns_count += 22
+        uc.mvaddstr(
+            3 + line_num,
+            SETTINGS.cols_length - columns_count + 1,
+            "| "
+            + time.strftime(
+                "%Y-%m-%d %H:%M:%S",
+                time.strptime(time.ctime(os.lstat(x).st_mtime)),
+            ),
+        )
+    if (
+        SETTINGS.size
+        and os.path.isfile(x)
+        and SETTINGS.cols_length - columns_count - 3 - l_size + 1 >= 8
+    ):
+        columns_count += 3 + l_size
+        uc.mvaddstr(
+            3 + line_num,
+            SETTINGS.cols_length - columns_count + 1,
+            "| " + _file_size(x),
+        )
+    if len(x) > SETTINGS.cols_length - 2 - columns_count:
+        name_x = "... " + x[-(SETTINGS.cols_length - 6 - columns_count) :]
+    else:
+        name_x = x
+    uc.mvaddwstr(3 + line_num, 2, name_x)
+
+
 def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     """printing function"""
 
@@ -227,9 +273,17 @@ def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         SETTINGS.current_directory = []
         SETTINGS.start_line_directory = 0
 
+    # init vars
+    max_line = min(
+        len(_directory()),
+        SETTINGS.start_line_directory + SETTINGS.rows_length - 3,
+    )
+    l_size = max((len(_file_size(x)) for x in _directory()))
+
     if position == "beginning":
         SETTINGS.start_line_directory = 0
         SETTINGS.index = 0
+
     elif position == "selection":
         SETTINGS.start_line_directory = 0
         if SETTINGS.selection in _directory():
@@ -237,24 +291,42 @@ def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         else:
             SETTINGS.index = 0
         position = "index"
+
     elif position == "up":
         SETTINGS.index -= 1
         if SETTINGS.index >= SETTINGS.start_line_directory:
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory + 1, 0, " ")
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory, 0, "-")
-            return  # exit the function
 
-        # else print up one
-        SETTINGS.start_line_directory -= 1
+        else:
+            # else print up one
+            SETTINGS.start_line_directory -= 1
+
+            uc.move(3, 0)
+            uc.insertln()
+
+            _print_line(0, SETTINGS.start_line_directory, l_size)
+            uc.mvaddch(4, 0, " ")
+            uc.mvaddch(3, 0, "-")
+        return
+
     elif position == "down":
         SETTINGS.index += 1
         if SETTINGS.index < SETTINGS.rows_length - 3 + SETTINGS.start_line_directory:
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory - 1, 0, " ")
             uc.mvaddch(3 + SETTINGS.index - SETTINGS.start_line_directory, 0, "-")
-            return  # exit the function
 
-        # else print down 1
-        SETTINGS.start_line_directory += 1
+        else:
+            # else print down 1
+            SETTINGS.start_line_directory += 1
+
+            uc.move(3, 0)
+            uc.deleteln()
+
+            _print_line(SETTINGS.rows_length - 4, max_line - 1, l_size)
+            uc.mvaddch(SETTINGS.rows_length - 2, 0, " ")
+            uc.mvaddch(SETTINGS.rows_length - 1, 0, "-")
+        return
 
     # print on screen
     uc.clear()
@@ -277,7 +349,6 @@ def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         position = ""
     else:
         SETTINGS.update_order(False)
-        l_size = max((len(_file_size(x)) for x in _directory()))
 
         # write the description on top
         columns_count = 0
@@ -315,65 +386,15 @@ def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         for line_num, k in enumerate(
             range(
                 SETTINGS.start_line_directory,
-                min(
-                    len(_directory()),
-                    SETTINGS.start_line_directory + SETTINGS.rows_length - 3,
-                ),
+                max_line,
             )
         ):
-            x = _directory()[k]
-            if os.path.isdir(x):
-                uc.mvaddch(3 + line_num, 1, "<")
+            _print_line(line_num, k, l_size)
 
-            # add extensions
-            columns_count = 0
-            if (
-                SETTINGS.permission
-                and SETTINGS.cols_length - columns_count - 9 + 1 >= 8
-            ):
-                columns_count += 9
-                uc.mvaddstr(
-                    3 + line_num,
-                    SETTINGS.cols_length - columns_count + 1,
-                    "| "
-                    + ("r " if os.access(x, os.R_OK) else "- ")
-                    + ("w " if os.access(x, os.W_OK) else "- ")
-                    + ("x" if os.access(x, os.X_OK) else "-"),
-                )
-            if SETTINGS.time and SETTINGS.cols_length - columns_count - 22 + 1 >= 8:
-                columns_count += 22
-                uc.mvaddstr(
-                    3 + line_num,
-                    SETTINGS.cols_length - columns_count + 1,
-                    "| "
-                    + time.strftime(
-                        "%Y-%m-%d %H:%M:%S",
-                        time.strptime(time.ctime(os.lstat(x).st_mtime)),
-                    ),
-                )
-            if (
-                SETTINGS.size
-                and os.path.isfile(x)
-                and SETTINGS.cols_length - columns_count - 3 - l_size + 1 >= 8
-            ):
-                columns_count += 3 + l_size
-                uc.mvaddstr(
-                    3 + line_num,
-                    SETTINGS.cols_length - columns_count + 1,
-                    "| " + _file_size(x),
-                )
-            if len(x) > SETTINGS.cols_length - 2 - columns_count:
-                name_x = "... " + x[-(SETTINGS.cols_length - 6 - columns_count) :]
-            else:
-                name_x = x
-            uc.mvaddwstr(3 + line_num, 2, name_x)
-
-    if position == "beginning" or position == "up":
+    if position == "beginning":
         uc.mvaddch(3, 0, "-")
     elif position == "index":
         uc.mvaddch(SETTINGS.index - SETTINGS.start_line_directory + 3, 0, "-")
-    elif position == "down":
-        uc.mvaddch(SETTINGS.rows_length - 1, 0, "-")
 
 
 def _beeper() -> None:
@@ -582,7 +603,7 @@ def _file_manager(stdscr: ctypes.c_void_p, picker: bool) -> str:
 
 def file_manager(picker: bool = False):
     """file manager"""
-    
+
     uc.wrapper(_file_manager, picker)
 
 
