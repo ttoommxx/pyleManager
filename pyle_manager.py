@@ -6,7 +6,7 @@ import argparse
 import ctypes
 from itertools import chain
 from platform import system
-import unicurses as uc
+import unicurses as uc  # type: ignore
 
 
 # mutable settings
