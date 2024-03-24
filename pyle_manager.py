@@ -278,7 +278,7 @@ def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         len(_directory()),
         SETTINGS.start_line_directory + SETTINGS.rows_length - 3,
     )
-    l_size = max((len(_file_size(x)) for x in _directory()))
+    l_size = max((len(_file_size(x)) for x in _directory())) if _directory() else 0
 
     if position == "beginning":
         SETTINGS.start_line_directory = 0
@@ -601,10 +601,10 @@ def _file_manager(stdscr: ctypes.c_void_p, picker: bool) -> str:
     return output
 
 
-def file_manager(picker: bool = False):
+def file_manager(picker: bool = False) -> str:
     """file manager"""
 
-    uc.wrapper(_file_manager, picker)
+    return uc.wrapper(_file_manager, picker)
 
 
 if __name__ == "__main__":
