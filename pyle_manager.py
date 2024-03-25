@@ -59,13 +59,13 @@ class Settings:
     def rows_length(self) -> int:
         """return rows length"""
 
-        return uc.getmaxyx(self.stdscr)[0]
+        return uc.getmaxy(self.stdscr)
 
     @property
     def cols_length(self) -> int:
         """return columns length"""
 
-        return uc.getmaxyx(self.stdscr)[1]
+        return uc.getmaxx(self.stdscr)
 
     def change_size(self) -> None:
         """toggle size"""
@@ -274,10 +274,6 @@ def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         SETTINGS.start_line_directory = 0
 
     # init vars
-    max_line = min(
-        len(_directory()),
-        SETTINGS.start_line_directory + SETTINGS.rows_length - 3,
-    )
     l_size = max((len(_file_size(x)) for x in _directory())) if _directory() else 0
 
     if position == "beginning":
@@ -318,15 +314,26 @@ def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
 
         else:
             # else print down 1
-            SETTINGS.start_line_directory += 1
 
             uc.move(3, 0)
             uc.deleteln()
 
-            _print_line(SETTINGS.rows_length - 4, max_line - 1, l_size)
+            max_line = min(
+                len(_directory()),
+                SETTINGS.start_line_directory + SETTINGS.rows_length - 3,
+            )
+
+            SETTINGS.start_line_directory += 1
+
+            _print_line(SETTINGS.rows_length - 4, max_line, l_size)
             uc.mvaddch(SETTINGS.rows_length - 2, 0, " ")
             uc.mvaddch(SETTINGS.rows_length - 1, 0, "-")
         return
+
+    max_line = min(
+        len(_directory()),
+        SETTINGS.start_line_directory + SETTINGS.rows_length - 3,
+    )
 
     # print on screen
     uc.clear()
@@ -347,6 +354,7 @@ def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     if len(_directory()) == 0:
         uc.mvaddstr(2, 1, "**EMPTY FOLDER**")
         position = ""
+
     else:
         SETTINGS.update_order(False)
 
@@ -405,34 +413,53 @@ def _beeper() -> None:
 
 def _instructions() -> None:
     """print instructions"""
+
     uc.clear()
 
-    string = f"""INSTRUCTIONS:
+    lines = [
+        "INSTRUCTIONS:",
+        "",
+        'the prefix "<" means folder',
+        "",
+        "upArrow = up",
+        "downArrow = down",
+        "r = refresh",
+        f"h = ({'yes' if SETTINGS.hidden else 'no'}) toggle hidden files",
+        f"d = ({'yes' if SETTINGS.size else 'no'}) toggle file size",
+        f"t = ({'yes' if SETTINGS.time else 'no'}) toggle time last modified",
+        f"b = ({'yes' if SETTINGS.beep else 'no'}) toggle beep",
+        f"p = ({'yes' if SETTINGS.permission else 'no'}) toggle permission"
+        f"m = ({("NAME", "SIZE", "TIME MODIFIED")[SETTINGS.order]}) change ordering"
+        f"enter = {'select file' if SETTINGS.picker else 'open using the default application launcher'}",
+        f"e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}"
+        "",
+        " -press q to quit-",
+    ]
+    nlines = len(lines)
+    start_line = 0
+    end_line = min(SETTINGS.rows_length - 1, nlines - 1)
 
-the prefix \"<\" means folder
+    for i in range(start_line, end_line + 1):
+        uc.mvaddstr(i, 0, lines[i])
 
-upArrow = up
-downArrow = down
-r = refresh
-h = ({'yes' if SETTINGS.hidden else 'no'}) toggle hidden files
-d = ({'yes' if SETTINGS.size else 'no'}) toggle file size
-t = ({'yes' if SETTINGS.time else 'no'}) toggle time last modified
-b = ({'yes' if SETTINGS.beep else 'no'}) toggle beep
-p = ({'yes' if SETTINGS.permission else 'no'}) toggle permission
-m = ({("NAME", "SIZE", "TIME MODIFIED")[SETTINGS.order]}) change ordering
-enter = {'select file' if SETTINGS.picker else 'open using the default application launcher'}
-e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}"""
-    for i, line in enumerate(string.splitlines()):
-        if i < SETTINGS.rows_length - 1:
-            uc.mvaddstr(i, 0, line)
-        else:
-            uc.mvaddstr(SETTINGS.rows_length - 1, 1, "-press to continue-")
-            uc.getkey()
-            uc.move(0, 0)
-            uc.deleteln()
-            uc.mvaddstr(SETTINGS.rows_length - 2, 0, line)
-    uc.mvaddstr(SETTINGS.rows_length - 1, 1, "-press to continue-")
-    uc.getkey()
+    while True:
+        button = uc.getkey()
+        if button == "q":
+            break
+        elif button == "KEY_UP":
+            if start_line > 0:
+                start_line -= 1
+                end_line -= 1
+                uc.move(0, 0)
+                uc.insertln()
+                uc.mvaddstr(0, 0, lines[start_line])
+        elif button == "KEY_DOWN":
+            if end_line < nlines - 1:
+                start_line += 1
+                end_line += 1
+                uc.move(0, 0)
+                uc.deleteln()
+                uc.mvaddstr(SETTINGS.rows_length - 1, 0, lines[end_line])
 
 
 # --------------------------------------------------
@@ -473,7 +500,7 @@ def _file_manager(stdscr: ctypes.c_void_p, picker: bool) -> str:
                     and os.access(SETTINGS.selection, os.R_OK)
                 ):
                     os.chdir(SETTINGS.selection)
-                    _dir_printer(refresh=True, position="index")
+                    _dir_printer(refresh=True, position="beginning")
                 else:
                     _beeper()
 
@@ -481,7 +508,7 @@ def _file_manager(stdscr: ctypes.c_void_p, picker: bool) -> str:
             case "KEY_LEFT":
                 if os.path.dirname(os.getcwd()) != os.getcwd():
                     os.chdir("..")
-                    _dir_printer(refresh=True, position="index")
+                    _dir_printer(refresh=True, position="beginning")
                 else:
                     _beeper()
 
