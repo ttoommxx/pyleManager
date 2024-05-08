@@ -423,7 +423,7 @@ def _instructions() -> None:
         f"t = ({'yes' if SETTINGS.time else 'no'}) toggle time last modified",
         f"b = ({'yes' if SETTINGS.beep else 'no'}) toggle beep",
         f"p = ({'yes' if SETTINGS.permission else 'no'}) toggle permission"
-        f"m = ({("NAME", "SIZE", "TIME MODIFIED")[SETTINGS.order]}) change ordering"
+        f"m = ({('NAME', 'SIZE', 'TIME MODIFIED')[SETTINGS.order]}) change ordering"
         f"enter = {'select file' if SETTINGS.picker else 'open using the default application launcher'}",
         f"e = {'--disabled--' if SETTINGS.picker else 'edit using command-line editor'}"
         "",
