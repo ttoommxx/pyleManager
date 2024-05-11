@@ -279,11 +279,12 @@ def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
         SETTINGS.index = 0
 
     elif position == "selection":
-        SETTINGS.start_line_directory = 0
         if SETTINGS.selection in _directory():
             SETTINGS.index = _directory().index(SETTINGS.selection)
         else:
             SETTINGS.index = 0
+        # correct in case we go out of monitor
+        SETTINGS.start_line_directory = max(0, 4 + SETTINGS.index - SETTINGS.rows)
         position = "index"
 
     elif position == "up":
@@ -350,48 +351,48 @@ def _dir_printer(refresh: bool = False, position: str = "beginning") -> None:
     if len(_directory()) == 0:
         uc.mvaddstr(2, 1, "**EMPTY FOLDER**")
         position = ""
+        return
 
-    else:
-        SETTINGS.update_order(False)
+    SETTINGS.update_order(False)
 
-        # write the description on top
-        columns_count = 0
-        uc.mvaddstr(2, 1, "v*NAME*" if SETTINGS.order == 0 else " *NAME*")
-        if SETTINGS.permission and SETTINGS.cols - columns_count - 9 + 1 >= 8:
-            columns_count += 9
-            uc.mvaddstr(2, SETTINGS.cols - columns_count + 1, ("| *PERM*"))
-        if SETTINGS.time and SETTINGS.cols - columns_count - 22 + 1 >= 8:
-            columns_count += 22
-            uc.mvaddstr(
-                2,
-                SETTINGS.cols - columns_count + 1,
-                ("|v" if SETTINGS.order == 2 else "| ") + "*TIME MODIFIED*",
-            )
-        if (
-            SETTINGS.size
-            and any(os.path.isfile(x) for x in _directory())
-            and SETTINGS.cols - columns_count - 3 - l_size + 1 >= 8
-        ):
-            columns_count += 3 + l_size
-            uc.mvaddstr(
-                2,
-                SETTINGS.cols - columns_count + 1,
-                ("|v" if SETTINGS.order == 1 else "| ") + "*SIZE*",
-            )
+    # write the description on top
+    columns_count = 0
+    uc.mvaddstr(2, 1, "v*NAME*" if SETTINGS.order == 0 else " *NAME*")
+    if SETTINGS.permission and SETTINGS.cols - columns_count - 9 + 1 >= 8:
+        columns_count += 9
+        uc.mvaddstr(2, SETTINGS.cols - columns_count + 1, ("| *PERM*"))
+    if SETTINGS.time and SETTINGS.cols - columns_count - 22 + 1 >= 8:
+        columns_count += 22
+        uc.mvaddstr(
+            2,
+            SETTINGS.cols - columns_count + 1,
+            ("|v" if SETTINGS.order == 2 else "| ") + "*TIME MODIFIED*",
+        )
+    if (
+        SETTINGS.size
+        and any(os.path.isfile(x) for x in _directory())
+        and SETTINGS.cols - columns_count - 3 - l_size + 1 >= 8
+    ):
+        columns_count += 3 + l_size
+        uc.mvaddstr(
+            2,
+            SETTINGS.cols - columns_count + 1,
+            ("|v" if SETTINGS.order == 1 else "| ") + "*SIZE*",
+        )
 
-        if position == "index":
-            if len(_directory()) - 1 < SETTINGS.index:
-                SETTINGS.index = len(_directory()) - 1
-            if SETTINGS.index >= SETTINGS.rows - 3:
-                SETTINGS.start_line_directory = SETTINGS.index - (SETTINGS.rows - 3) + 1
+    if position == "index":
+        if len(_directory()) - 1 < SETTINGS.index:
+            SETTINGS.index = len(_directory()) - 1
+        if SETTINGS.index >= SETTINGS.rows - 3:
+            SETTINGS.start_line_directory = SETTINGS.index - (SETTINGS.rows - 3) + 1
 
-        for line_num, k in enumerate(
-            range(
-                SETTINGS.start_line_directory,
-                max_line,
-            )
-        ):
-            _print_line(line_num, k, l_size)
+    for line_num, k in enumerate(
+        range(
+            SETTINGS.start_line_directory,
+            max_line,
+        )
+    ):
+        _print_line(line_num, k, l_size)
 
     if position == "beginning":
         uc.mvaddch(3, 0, "-")
@@ -415,7 +416,7 @@ def _instructions() -> None:
         "",
         'the prefix "<" means folder',
         "",
-        "upArrow = up",
+        "upqArrow = up",
         "downArrow = down",
         "r = refresh",
         f"h = ({'yes' if SETTINGS.hidden else 'no'}) toggle hidden files",
@@ -463,6 +464,10 @@ def _file_manager(stdscr: ctypes.c_void_p, picker: bool) -> str:
     """file manager, wrapped by unicurses"""
 
     SETTINGS.init(picker)
+
+    while SETTINGS.rows < 4 or SETTINGS.cols < 8:
+        uc.mvaddstr(0, 0, "RESIZE")
+        uc.getkey()
 
     _dir_printer(refresh=True, position="beginning")
 
@@ -608,11 +613,11 @@ def _file_manager(stdscr: ctypes.c_void_p, picker: bool) -> str:
                 _dir_printer(position="selection")
 
             case "KEY_RESIZE":
-                if SETTINGS.rows < 3 or SETTINGS.cols < 8:
+                if SETTINGS.rows < 4 or SETTINGS.cols < 8:
                     uc.clear()
                     uc.mvaddstr(0, 0, "RESIZE")
-                    uc.getkey()
-                _dir_printer(position="selection")
+                else:
+                    _dir_printer(position="selection")
 
             case _:
                 pass

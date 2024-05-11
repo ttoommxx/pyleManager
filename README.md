@@ -1,4 +1,4 @@
-# pyleManager 2.1.2
+# pyleManager 2.1.3
 
 A very simple file manager for the terminal written in Python.
 
