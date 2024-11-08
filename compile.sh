@@ -1,9 +1,5 @@
 #!/bin/bash
 
-if ! command -v pip &> /dev/null; then
-    echo "Error: pip not installed."
-    exit 1
-fi
 
 installed_packages=$(pip list)
 
